@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -266,11 +266,15 @@ export default function EditListing() {
                 </FormItem>
               )} />
 
-              <FormItem>
-                <FormLabel>Photos <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                <Controller control={form.control} name="images" render={({ field }) => <PhotoUpload value={field.value} onChange={field.onChange} maxPhotos={5} />} />
-                <FormMessage>{form.formState.errors.images?.message}</FormMessage>
-              </FormItem>
+              <FormField control={form.control} name="images" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Photos <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                  <FormControl>
+                    <PhotoUpload value={field.value} onChange={field.onChange} maxPhotos={5} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
               <div className="flex gap-4 mt-2">
                 <Button type="button" variant="outline" size="lg" className="flex-1 h-12" onClick={() => navigate('/dashboard')}>Cancel</Button>

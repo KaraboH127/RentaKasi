@@ -40,16 +40,31 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext)
   const itemContext = React.useContext(FormItemContext)
-  const { getFieldState, formState } = useFormContext()
+  const fallbackId = React.useId()
+  const formContext = useFormContext()
 
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>")
+  if (!fieldContext || !itemContext || !formContext) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        "shadcn form components should be rendered inside <FormField><FormItem> and <Form {...form}>.",
+      )
+    }
+
+    return {
+      id: fallbackId,
+      name: "",
+      formItemId: `${fallbackId}-form-item`,
+      formDescriptionId: `${fallbackId}-form-item-description`,
+      formMessageId: `${fallbackId}-form-item-message`,
+      invalid: false,
+      isDirty: false,
+      isTouched: false,
+      isValidating: false,
+      error: undefined,
+    }
   }
 
-  if (!itemContext) {
-    throw new Error("useFormField should be used within <FormItem>")
-  }
-
+  const { getFieldState, formState } = formContext
   const fieldState = getFieldState(fieldContext.name, formState)
 
   const { id } = itemContext

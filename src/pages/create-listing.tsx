@@ -1,4 +1,4 @@
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
@@ -196,11 +196,15 @@ export default function CreateListing() {
                 </FormItem>
               )} />
 
-              <FormItem>
-                <FormLabel>Photos <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                <Controller control={form.control} name="images" render={({ field }) => <PhotoUpload value={field.value} onChange={field.onChange} maxPhotos={5} />} />
-                <FormMessage>{form.formState.errors.images?.message}</FormMessage>
-              </FormItem>
+              <FormField control={form.control} name="images" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Photos <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                  <FormControl>
+                    <PhotoUpload value={field.value} onChange={field.onChange} maxPhotos={5} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
               <Button type="submit" size="lg" className="w-full h-13 font-semibold text-base mt-2" disabled={isSubmitting} data-testid="button-submit">
                 {isSubmitting ? 'Publishing...' : 'Publish Listing'}
