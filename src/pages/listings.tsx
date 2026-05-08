@@ -101,7 +101,7 @@ export default function Listings() {
                 type="button"
                 onClick={() => setFiltersOpen((open) => !open)}
                 className={cn(
-                  'sm:hidden flex items-center gap-1.5 px-3 h-11 rounded-lg border text-sm font-medium transition-colors shrink-0 touch-manipulation',
+                  'flex items-center gap-1.5 px-3 h-11 sm:h-12 rounded-lg border text-sm font-medium transition-colors shrink-0 touch-manipulation',
                   filtersOpen || activeFilterCount > 0
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-card text-foreground border-border hover:border-primary/50',
@@ -115,42 +115,12 @@ export default function Listings() {
                   </span>
                 )}
               </button>
-
-              <div className="hidden sm:flex gap-2">
-                <Select value={selectedLocation || 'all'} onValueChange={setSelectedLocation}>
-                  <SelectTrigger className="h-11 sm:h-12 w-40">
-                    <SelectValue placeholder="All Areas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Areas</SelectItem>
-                    {LOCATIONS.map((loc) => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-
-                <Select value={maxPrice || 'all'} onValueChange={(val) => setMaxPrice(val === 'all' ? '' : val)}>
-                  <SelectTrigger className="h-11 sm:h-12 w-36">
-                    <SelectValue placeholder="Any price" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Any price</SelectItem>
-                    <SelectItem value="1500">R1,500 or less</SelectItem>
-                    <SelectItem value="2500">R2,500 or less</SelectItem>
-                    <SelectItem value="3500">R3,500 or less</SelectItem>
-                    <SelectItem value="5000">R5,000 or less</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button type="submit" className="h-11 sm:h-12 px-5 shrink-0 touch-manipulation gap-2">
-                  <Search className="w-4 h-4" />
-                  Apply
-                </Button>
-              </div>
             </div>
 
             {filtersOpen && (
-              <div className="sm:hidden flex flex-col gap-2 pt-1 pb-1 border-t border-border/50 mt-1">
+              <div className="flex flex-col sm:flex-row gap-2 pt-3 pb-1 border-t border-border/50 mt-1">
                 <Select value={selectedLocation || 'all'} onValueChange={setSelectedLocation}>
-                  <SelectTrigger className="h-11 w-full">
+                  <SelectTrigger className="h-11 sm:h-12 w-full sm:w-48">
                     <SelectValue placeholder="All Areas" />
                   </SelectTrigger>
                   <SelectContent>
@@ -160,7 +130,7 @@ export default function Listings() {
                 </Select>
 
                 <Select value={maxPrice || 'all'} onValueChange={(val) => setMaxPrice(val === 'all' ? '' : val)}>
-                  <SelectTrigger className="h-11 w-full">
+                  <SelectTrigger className="h-11 sm:h-12 w-full sm:w-44">
                     <SelectValue placeholder="Any price" />
                   </SelectTrigger>
                   <SelectContent>
@@ -172,13 +142,13 @@ export default function Listings() {
                   </SelectContent>
                 </Select>
 
-                <div className="flex gap-2">
-                  <Button type="submit" className="flex-1 h-11 touch-manipulation gap-2">
+                <div className="flex gap-2 sm:ml-auto">
+                  <Button type="submit" className="flex-1 sm:flex-none h-11 sm:h-12 touch-manipulation gap-2">
                     <Search className="w-4 h-4" />
                     Apply Filters
                   </Button>
                   {activeFilterCount > 0 && (
-                    <Button type="button" variant="outline" className="h-11 px-4 touch-manipulation gap-1.5 text-muted-foreground" onClick={clearFilters}>
+                    <Button type="button" variant="outline" className="h-11 sm:h-12 px-4 touch-manipulation gap-1.5 text-muted-foreground" onClick={clearFilters}>
                       <X className="w-4 h-4" />
                       Clear
                     </Button>
