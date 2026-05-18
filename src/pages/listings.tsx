@@ -98,7 +98,7 @@ export default function Listings() {
 
   return (
     <div className="flex flex-col flex-grow bg-muted/20">
-      <div className="bg-card border-b sticky top-14 md:top-16 z-40">
+      <div className="sticky top-14 z-40 border-b bg-card/95 shadow-sm shadow-black/[0.02] backdrop-blur md:top-16">
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="hidden sm:flex justify-between items-center mb-4">
             <div>
@@ -131,7 +131,7 @@ export default function Listings() {
                 type="button"
                 onClick={() => setFiltersOpen((open) => !open)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 h-11 sm:h-12 rounded-lg border text-sm font-medium transition-colors shrink-0 touch-manipulation',
+                  'rk-focus rk-interactive flex items-center gap-1.5 px-3 h-11 sm:h-12 rounded-lg border text-sm font-semibold shrink-0 touch-manipulation',
                   filtersOpen || activeFilterCount > 0
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-card text-foreground border-border hover:border-primary/50',
@@ -148,7 +148,7 @@ export default function Listings() {
             </div>
 
             {filtersOpen && (
-              <div className="flex flex-col sm:flex-row gap-2 pt-3 pb-1 border-t border-border/50 mt-1">
+              <div className="flex flex-col gap-2 pt-3 pb-1 border-t border-border/50 mt-1 animate-in fade-in-0 slide-in-from-top-1 duration-150 sm:flex-row">
                 <Select value={selectedLocation || 'all'} onValueChange={setSelectedLocation}>
                   <SelectTrigger className="h-11 sm:h-12 w-full sm:w-48">
                     <SelectValue placeholder="All Areas" />
@@ -204,7 +204,7 @@ export default function Listings() {
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h1 className="font-display text-xl font-bold sm:hidden">Browse Rooms</h1>
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
-            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setMapOpen((value) => !value)}>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setMapOpen((value) => !value)} aria-pressed={mapOpen}>
               <Map className="h-4 w-4" />
               {mapOpen ? 'Hide map' : 'Map'}
             </Button>
@@ -225,7 +225,7 @@ export default function Listings() {
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-card rounded-2xl overflow-hidden border">
+              <div key={i} className="rk-surface rounded-2xl overflow-hidden">
                 <Skeleton className="w-full aspect-[4/3]" />
                 <div className="p-3">
                   <Skeleton className="h-4 w-3/4 mb-2" />

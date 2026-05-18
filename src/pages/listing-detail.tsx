@@ -80,7 +80,7 @@ export default function ListingDetail() {
     <div className="bg-background min-h-screen pb-4 md:pb-20">
       <div className="border-b bg-card/80 backdrop-blur sticky top-14 md:top-16 z-40">
         <div className="container mx-auto px-4 py-3">
-          <button onClick={() => navigate('/listings')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors touch-manipulation min-h-[44px]" data-testid="button-back">
+          <button onClick={() => navigate('/listings')} className="rk-focus flex min-h-[44px] items-center gap-2 rounded-lg px-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground touch-manipulation" data-testid="button-back">
             <ArrowLeft className="w-4 h-4" />
             Back to Listings
           </button>
@@ -90,8 +90,8 @@ export default function ListingDetail() {
       <div className="container mx-auto px-4 py-5 sm:py-10 max-w-5xl">
         <div className="grid md:grid-cols-5 gap-6 lg:gap-16">
           <div className="md:col-span-3">
-            <div className="rounded-2xl overflow-hidden bg-muted aspect-[4/3] mb-2 sm:mb-4 shadow-sm">
-              <img src={images[activeImage]} alt={listing.title} className="w-full h-full object-cover" loading="eager" data-testid="img-listing-main" />
+            <div className="rounded-2xl overflow-hidden bg-muted aspect-[4/3] mb-2 sm:mb-4 shadow-sm ring-1 ring-border/60">
+              <img src={images[activeImage]} alt={listing.title} className="w-full h-full object-cover transition-opacity duration-200" loading="eager" data-testid="img-listing-main" />
             </div>
             {images.length > 1 && (
               <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
@@ -99,7 +99,7 @@ export default function ListingDetail() {
                   <button
                     key={img}
                     onClick={() => setActiveImage(i)}
-                    className={`rounded-lg overflow-hidden aspect-square border-2 transition-all touch-manipulation ${activeImage === i ? 'border-primary shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                    className={`rk-focus rounded-lg overflow-hidden aspect-square border-2 transition-all touch-manipulation ${activeImage === i ? 'border-primary shadow-md opacity-100' : 'border-transparent opacity-60 hover:opacity-100 hover:border-primary/30'}`}
                     data-testid={`button-thumb-${i}`}
                   >
                     <img src={img} alt={`View ${i + 1}`} className="w-full h-full object-cover" />

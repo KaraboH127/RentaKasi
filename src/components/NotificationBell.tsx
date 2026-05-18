@@ -68,27 +68,27 @@ export function NotificationBell() {
         type="button"
         variant="ghost"
         size="sm"
-        className="relative h-10 w-10 rounded-full p-0 touch-manipulation"
+        className={cn('relative h-10 w-10 rounded-full p-0 touch-manipulation', open && 'bg-accent text-primary')}
         onClick={() => setOpen((value) => !value)}
         aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 min-w-5 h-5 rounded-full bg-primary px-1 text-[10px] font-bold leading-5 text-primary-foreground shadow-sm">
+          <span className="absolute -right-0.5 -top-0.5 min-w-5 h-5 animate-in zoom-in-75 rounded-full bg-primary px-1 text-[10px] font-bold leading-5 text-primary-foreground shadow-sm">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-[min(92vw,380px)] overflow-hidden rounded-2xl border bg-popover shadow-xl animate-in fade-in-0 zoom-in-95 duration-150">
+        <div className="absolute right-0 top-12 z-50 w-[min(92vw,390px)] overflow-hidden rounded-2xl border bg-popover shadow-2xl shadow-black/15 animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150">
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div>
               <p className="font-display font-semibold">Notifications</p>
               <p className="text-xs text-muted-foreground">{unreadCount ? `${unreadCount} unread update${unreadCount === 1 ? '' : 's'}` : 'You are all caught up'}</p>
             </div>
             {unreadCount > 0 && (
-              <button type="button" onClick={markAllRead} className="flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-primary hover:bg-primary/10">
+              <button type="button" onClick={markAllRead} className="rk-focus flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10">
                 <CheckCheck className="h-3.5 w-3.5" />
                 Read all
               </button>
@@ -106,7 +106,7 @@ export function NotificationBell() {
                 const content = (
                   <div
                     className={cn(
-                      'border-b px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/50',
+                      'border-b px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/50 active:bg-muted/70',
                       !notification.readAt && 'bg-primary/5',
                     )}
                     onClick={() => markOneRead(notification)}
@@ -127,7 +127,7 @@ export function NotificationBell() {
                     {content}
                   </Link>
                 ) : (
-                  <button key={notification.id} type="button" className="block w-full" aria-label={notification.title}>
+                  <button key={notification.id} type="button" className="rk-focus block w-full" aria-label={notification.title}>
                     {content}
                   </button>
                 )

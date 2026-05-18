@@ -7,6 +7,14 @@ import { LogOut, User as UserIcon, PlusCircle, Building2 } from 'lucide-react'
 export function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const navLinkClass = (href: string) => {
+    const active = href === '/' ? location.pathname === '/' : location.pathname.startsWith(href)
+    return `relative flex min-h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
+      active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+    }`
+  }
 
   const handleLogout = async () => {
     await logout()
@@ -14,28 +22,30 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 shadow-sm shadow-black/[0.02] backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="container mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-display font-bold text-lg md:text-xl text-primary touch-manipulation">
-          <Building2 className="w-5 h-5 md:w-6 md:h-6" />
+        <Link to="/" className="rk-focus flex min-h-10 items-center gap-2 rounded-full font-display font-bold text-lg text-primary touch-manipulation md:text-xl">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <Building2 className="w-5 h-5 md:w-6 md:h-6" />
+          </span>
           RentaKasi
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/listings" className="text-sm font-medium hover:text-primary transition-colors">
+        <nav className="hidden md:flex items-center gap-2">
+          <Link to="/listings" className={navLinkClass('/listings')}>
             Browse Rooms
           </Link>
 
           {user ? (
-            <div className="flex items-center gap-4 border-l pl-4 ml-2">
+            <div className="flex items-center gap-2 border-l pl-4 ml-2">
               <NotificationBell />
-              <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-2">
+              <Link to="/dashboard" className={navLinkClass('/dashboard')}>
                 <UserIcon className="w-4 h-4" />
                 Dashboard
               </Link>
 
               {user.role === 'landlord' && (
-                <Link to="/create-listing" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-2">
+                <Link to="/create-listing" className={navLinkClass('/create-listing')}>
                   <PlusCircle className="w-4 h-4" />
                   List a Room
                 </Link>

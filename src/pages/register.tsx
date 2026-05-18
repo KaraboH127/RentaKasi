@@ -113,7 +113,7 @@ export default function Register() {
             <button
               type="button"
               onClick={() => form.setValue('role', 'tenant')}
-              className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedRole === 'tenant' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+              className={`rk-focus rk-interactive p-4 rounded-2xl border-2 text-left ${selectedRole === 'tenant' ? 'border-primary bg-primary/5 shadow-sm shadow-primary/10' : 'border-border hover:border-primary/40 hover:bg-muted/30'}`}
               data-testid="button-role-tenant"
             >
               <Home className="w-5 h-5 mb-2 text-primary" />
@@ -123,7 +123,7 @@ export default function Register() {
             <button
               type="button"
               onClick={() => form.setValue('role', 'landlord')}
-              className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedRole === 'landlord' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+              className={`rk-focus rk-interactive p-4 rounded-2xl border-2 text-left ${selectedRole === 'landlord' ? 'border-primary bg-primary/5 shadow-sm shadow-primary/10' : 'border-border hover:border-primary/40 hover:bg-muted/30'}`}
               data-testid="button-role-landlord"
             >
               <Key className="w-5 h-5 mb-2 text-secondary" />

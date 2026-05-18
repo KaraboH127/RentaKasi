@@ -138,7 +138,7 @@ export default function CreateListing() {
     <div className="bg-muted/20 min-h-screen pb-24">
       <div className="border-b bg-card sticky top-14 md:top-16 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]" data-testid="button-back">
+          <button onClick={() => navigate('/dashboard')} className="rk-focus flex min-h-[44px] items-center gap-2 rounded-lg px-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" data-testid="button-back">
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
@@ -147,7 +147,7 @@ export default function CreateListing() {
       </div>
 
       <div className="container mx-auto px-4 py-6 sm:py-10 max-w-2xl">
-        <div className="bg-card rounded-2xl border shadow-sm p-5 sm:p-8">
+        <div className="rk-surface rounded-2xl p-5 sm:p-8">
           <h2 className="font-display text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2">Create Your Listing</h2>
           <p className="text-muted-foreground text-sm sm:text-base mb-6 sm:mb-8">Clear location, outside photos, and landmarks help tenants trust what they are seeing.</p>
 
@@ -201,7 +201,7 @@ export default function CreateListing() {
                 )} />
               </div>
 
-              <div className="rounded-2xl border bg-muted/30 p-4 sm:p-5">
+              <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 sm:p-5">
                 <div className="mb-5 flex items-start gap-3">
                   <div className="mt-0.5 rounded-xl bg-primary/10 p-2 text-primary"><ShieldCheck className="h-5 w-5" /></div>
                   <div>

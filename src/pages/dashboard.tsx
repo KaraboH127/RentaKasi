@@ -78,15 +78,15 @@ function LandlordDashboard({ userId }: { userId: string }) {
 
       {!isLoading && (
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10">
-          <div className="bg-card border rounded-2xl p-4 sm:p-6">
+          <div className="rk-surface rounded-2xl p-4 sm:p-6">
             <p className="text-muted-foreground text-xs sm:text-sm mb-1">Listings</p>
             <p className="font-display text-2xl sm:text-3xl font-bold text-primary" data-testid="stat-total-listings">{listings.length}</p>
           </div>
-          <div className="bg-card border rounded-2xl p-4 sm:p-6">
+          <div className="rk-surface rounded-2xl p-4 sm:p-6">
             <p className="text-muted-foreground text-xs sm:text-sm mb-1">Avg. Rent</p>
             <p className="font-display text-2xl sm:text-3xl font-bold">R{listings.length > 0 ? Math.round(listings.reduce((sum, listing) => sum + listing.price, 0) / listings.length) : 0}</p>
           </div>
-          <div className="bg-card border rounded-2xl p-4 sm:p-6">
+          <div className="rk-surface rounded-2xl p-4 sm:p-6">
             <p className="text-muted-foreground text-xs sm:text-sm mb-1">Areas</p>
             <p className="font-display text-2xl sm:text-3xl font-bold">{new Set(listings.map((listing) => listing.location)).size}</p>
           </div>
@@ -112,16 +112,16 @@ function LandlordDashboard({ userId }: { userId: string }) {
         ) : listings.length > 0 ? (
           <div className="flex flex-col gap-3 sm:gap-4">
             {listings.map((listing) => (
-              <div key={listing.id} className="bg-card border border-border/60 rounded-2xl p-4 sm:p-5 flex gap-3 sm:gap-5 hover:border-primary/30 transition-colors" data-testid={`card-listing-${listing.id}`}>
+              <div key={listing.id} className="rk-surface rk-card-hover rk-interactive rounded-2xl p-4 sm:p-5 flex gap-3 sm:gap-5" data-testid={`card-listing-${listing.id}`}>
                 <div className="w-20 h-16 sm:w-28 sm:h-20 rounded-xl overflow-hidden bg-muted shrink-0 cursor-pointer" onClick={() => navigate(`/listing/${listing.id}`)}>
                   <img src={listing.images[0] || 'https://placehold.co/200x160/e3ddd8/1f242d?text=Room'} alt={listing.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h3 className="font-display font-semibold text-sm sm:text-base leading-tight cursor-pointer hover:text-primary transition-colors line-clamp-2" onClick={() => navigate(`/listing/${listing.id}`)} data-testid={`text-listing-title-${listing.id}`}>
+                    <button type="button" className="rk-focus text-left font-display font-semibold text-sm sm:text-base leading-tight cursor-pointer hover:text-primary transition-colors line-clamp-2" onClick={() => navigate(`/listing/${listing.id}`)} data-testid={`text-listing-title-${listing.id}`}>
                       {listing.title}
-                    </h3>
+                    </button>
                     <span className="font-display font-bold text-primary text-sm shrink-0">R{listing.price}<span className="text-[10px] text-muted-foreground font-sans font-normal">/mo</span></span>
                   </div>
 
@@ -231,7 +231,7 @@ function TenantDashboard() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
-        <section className="rounded-2xl border bg-card p-5 sm:p-6">
+        <section className="rk-surface rounded-2xl p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-lg font-bold">Saved Searches</h2>
@@ -245,7 +245,7 @@ function TenantDashboard() {
           ) : savedSearches.length > 0 ? (
             <div className="space-y-3">
               {savedSearches.map((search) => (
-                <div key={search.id} className="rounded-xl border bg-background p-4">
+                <div key={search.id} className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/25">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-display font-semibold">{search.name}</p>
@@ -270,7 +270,7 @@ function TenantDashboard() {
           )}
         </section>
 
-        <section className="rounded-2xl border bg-card p-5 sm:p-6">
+        <section className="rk-surface rounded-2xl p-5 sm:p-6">
           <div className="mb-5 flex items-center gap-3">
             <div className="rounded-xl bg-primary/10 p-2 text-primary"><Bell className="h-5 w-5" /></div>
             <div>
@@ -284,7 +284,7 @@ function TenantDashboard() {
           ) : notifications.length > 0 ? (
             <div className="space-y-3">
               {notifications.slice(0, 6).map((notification) => (
-                <div key={notification.id} className="rounded-xl border bg-background p-3">
+                <div key={notification.id} className="rounded-xl border bg-background p-3 transition-colors hover:border-primary/25">
                   <p className="text-sm font-semibold">{notification.title}</p>
                   <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{notification.body}</p>
                 </div>

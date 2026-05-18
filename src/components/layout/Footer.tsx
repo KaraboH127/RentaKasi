@@ -7,7 +7,7 @@ export function Footer() {
       <div className="container mx-auto px-4 md:px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           <div className="col-span-2">
-            <Link to="/" className="flex items-center gap-2 font-display font-bold text-lg text-primary mb-3">
+            <Link to="/" className="rk-focus flex w-fit items-center gap-2 rounded-lg font-display font-bold text-lg text-primary mb-3">
               <Building2 className="w-5 h-5" />
               RentaKasi
             </Link>
@@ -19,18 +19,18 @@ export function Footer() {
           <div>
             <h4 className="font-display font-semibold mb-3 text-foreground text-sm">Explore</h4>
             <ul className="space-y-2">
-              <li><Link to="/listings" className="text-sm text-muted-foreground hover:text-primary transition-colors">Browse Listings</Link></li>
-              <li><Link to="/listings?location=Soweto" className="text-sm text-muted-foreground hover:text-primary transition-colors">Rooms in Soweto</Link></li>
-              <li><Link to="/listings?location=Tembisa" className="text-sm text-muted-foreground hover:text-primary transition-colors">Rooms in Tembisa</Link></li>
+              <li><Link to="/listings" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">Browse Listings</Link></li>
+              <li><Link to="/listings?location=Soweto" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">Rooms in Soweto</Link></li>
+              <li><Link to="/listings?location=Tembisa" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">Rooms in Tembisa</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-display font-semibold mb-3 text-foreground text-sm">Company</h4>
             <ul className="space-y-2">
-              <li><Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
-              <li><Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
-              <li><Link to="/terms#safety" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help & safety</Link></li>
+              <li><Link to="/about" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
+              <li><Link to="/terms" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
+              <li><Link to="/terms#safety" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">Help & safety</Link></li>
             </ul>
           </div>
         </div>

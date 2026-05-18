@@ -66,12 +66,12 @@ export function PhotoUpload({ value, onChange, maxPhotos = 5 }: PhotoUploadProps
       {value.length > 0 && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {value.map((url, index) => (
-            <div key={url + index} className="relative aspect-square rounded-xl overflow-hidden bg-muted group">
-              <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+            <div key={url + index} className="group relative aspect-square overflow-hidden rounded-xl bg-muted ring-1 ring-border/60">
+              <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
               <button
                 type="button"
                 onClick={() => removePhoto(index)}
-                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                className="rk-focus absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/65 text-white opacity-90 transition-opacity hover:bg-black/80 sm:opacity-0 group-hover:opacity-100"
                 aria-label="Remove photo"
               >
                 <X className="w-3.5 h-3.5" />
@@ -81,7 +81,7 @@ export function PhotoUpload({ value, onChange, maxPhotos = 5 }: PhotoUploadProps
           ))}
 
           {canAddMore && !uploading && (
-            <button type="button" onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 flex flex-col items-center justify-center gap-1 transition-colors">
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="rk-focus rk-interactive aspect-square rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 flex flex-col items-center justify-center gap-1">
               <ImagePlus className="w-5 h-5 text-muted-foreground" />
             </button>
           )}
@@ -100,7 +100,7 @@ export function PhotoUpload({ value, onChange, maxPhotos = 5 }: PhotoUploadProps
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading || !user}
           className={cn(
-            'w-full h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors',
+            'rk-focus rk-interactive w-full h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2',
             uploading || !user ? 'border-border bg-muted/30 cursor-not-allowed' : 'border-border hover:border-primary/50 hover:bg-muted/50 cursor-pointer',
           )}
         >

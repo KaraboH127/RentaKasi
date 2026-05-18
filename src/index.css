@@ -156,9 +156,61 @@
     font-family: var(--font-display);
   }
 
+  a[href],
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  textarea:disabled,
+  select:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  input,
+  textarea {
+    cursor: text;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+  }
 }
 
 /* Touch-friendly interaction */
 .touch-manipulation {
   touch-action: manipulation;
+}
+
+@layer components {
+  .rk-focus {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .rk-surface {
+    @apply border border-border/70 bg-card shadow-sm shadow-black/[0.025];
+  }
+
+  .rk-interactive {
+    @apply transition-[border-color,box-shadow,transform,background-color,color,opacity] duration-200 ease-out active:scale-[0.985];
+  }
+
+  .rk-card-hover {
+    @apply hover:border-primary/30 hover:shadow-lg hover:shadow-black/[0.06];
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
