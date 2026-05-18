@@ -14,6 +14,8 @@ import EditListing from '@/pages/edit-listing'
 import Dashboard from '@/pages/dashboard'
 import Login from '@/pages/login'
 import Register from '@/pages/register'
+import About from '@/pages/about'
+import Terms from '@/pages/terms'
 import NotFound from '@/pages/not-found'
 
 function App() {
@@ -33,6 +35,8 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/terms" element={<Terms />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

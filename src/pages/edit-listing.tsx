@@ -12,24 +12,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { getListingById, updateListing, type Listing } from '@/lib/listings'
+import { LOCATIONS, ROOM_TYPES } from '@/lib/rental-options'
 import { PhotoUpload } from '@/components/PhotoUpload'
-import { ArrowLeft, Home, MapPin, Phone } from 'lucide-react'
-
-const LOCATIONS = [
-  'Soweto', 'Tembisa', 'Alexandra', 'Katlehong', 'Thokoza',
-  'Vosloorus', 'Mamelodi', 'Soshanguve', 'Mitchells Plain',
-  'Khayelitsha', 'Gugulethu', 'Nyanga',
-]
+import { LocationPicker } from '@/components/LocationPicker'
+import { ArrowLeft, Home, MapPin, Phone, ShieldCheck } from 'lucide-react'
 
 const editListingSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
   location: z.string().min(1, 'Please select a location'),
+  address: z.string().min(8, 'Address is required'),
+  landmark: z.string().min(3, 'Nearby landmark is required'),
+  taxiRouteProximity: z.string().min(3, 'Taxi route proximity is required'),
+  transportInfo: z.string().optional(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+  roomType: z.enum(['room', 'back_room', 'cottage', 'apartment', 'shared']),
   price: z.string().min(1, 'Price is required').refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'Price must be a positive number'),
   bedrooms: z.string().optional(),
   bathrooms: z.string().optional(),
   images: z.array(z.string()).default([]),
+  outsidePhoto: z.array(z.string()).min(1, 'Outside property photo is required'),
+  streetPhoto: z.array(z.string()).default([]),
   landlordPhone: z.string().min(10, 'Please enter a valid phone number'),
+}).superRefine((data, ctx) => {
+  if (data.latitude === null || data.longitude === null) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Map pin is required', path: ['latitude'] })
+  }
 })
 
 type EditListingFormData = z.infer<typeof editListingSchema>
@@ -50,10 +59,19 @@ export default function EditListing() {
       title: '',
       description: '',
       location: '',
+      address: '',
+      landmark: '',
+      taxiRouteProximity: '',
+      transportInfo: '',
+      latitude: null,
+      longitude: null,
+      roomType: 'room',
       price: '',
       bedrooms: '',
       bathrooms: '',
       images: [],
+      outsidePhoto: [],
+      streetPhoto: [],
       landlordPhone: user?.phone || '',
     },
   })
@@ -76,10 +94,19 @@ export default function EditListing() {
       title: listing.title,
       description: listing.description,
       location: listing.location,
+      address: listing.address || '',
+      landmark: listing.landmark || '',
+      taxiRouteProximity: listing.taxiRouteProximity || '',
+      transportInfo: listing.transportInfo || '',
+      latitude: listing.latitude,
+      longitude: listing.longitude,
+      roomType: listing.roomType || 'room',
       price: String(listing.price),
       bedrooms: listing.bedrooms ? String(listing.bedrooms) : '',
       bathrooms: listing.bathrooms ? String(listing.bathrooms) : '',
       images: listing.images,
+      outsidePhoto: listing.outsidePhotoUrl ? [listing.outsidePhotoUrl] : [],
+      streetPhoto: listing.streetPhotoUrl ? [listing.streetPhotoUrl] : [],
       landlordPhone: listing.landlordPhone || user?.phone || '',
     })
   }, [form, listing, user?.phone])
@@ -147,10 +174,19 @@ export default function EditListing() {
         title: data.title,
         description: data.description,
         location: data.location,
+        address: data.address,
+        landmark: data.landmark,
+        taxiRouteProximity: data.taxiRouteProximity,
+        transportInfo: data.transportInfo,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        roomType: data.roomType,
         price: Number(data.price),
         bedrooms: data.bedrooms ? Number(data.bedrooms) : null,
         bathrooms: data.bathrooms ? Number(data.bathrooms) : null,
         images: data.images,
+        outsidePhotoUrl: data.outsidePhoto[0],
+        streetPhotoUrl: data.streetPhoto[0] ?? null,
         landlordPhone: data.landlordPhone,
       })
       await refreshProfile()
@@ -217,6 +253,19 @@ export default function EditListing() {
                   </FormItem>
                 )} />
 
+                <FormField control={form.control} name="roomType" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Room Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger className="h-12"><SelectValue placeholder="Select room type" /></SelectTrigger></FormControl>
+                      <SelectContent>{ROOM_TYPES.map((type) => <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <FormField control={form.control} name="price" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Monthly Rent (R)</FormLabel>
@@ -229,6 +278,61 @@ export default function EditListing() {
                     <FormMessage />
                   </FormItem>
                 )} />
+              </div>
+
+              <div className="rounded-2xl border bg-muted/30 p-4 sm:p-5">
+                <div className="mb-5 flex items-start gap-3">
+                  <div className="mt-0.5 rounded-xl bg-primary/10 p-2 text-primary"><ShieldCheck className="h-5 w-5" /></div>
+                  <div>
+                    <h3 className="font-display font-semibold">Trust location details</h3>
+                    <p className="text-sm text-muted-foreground">Keep address, landmark, and map pin current so tenants can verify the property.</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-5">
+                  <FormField control={form.control} name="address" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Address</FormLabel>
+                      <FormControl><Input placeholder="Street number, street name, section" className="h-12" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <FormField control={form.control} name="landmark" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nearby Landmark</FormLabel>
+                        <FormControl><Input placeholder="e.g., near Jabulani Mall" className="h-12" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="taxiRouteProximity" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Taxi Route Proximity</FormLabel>
+                        <FormControl><Input placeholder="e.g., 5 min walk to main taxi route" className="h-12" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <FormField control={form.control} name="transportInfo" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nearby Transport <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <FormControl><Input placeholder="Bus stop, train station, taxi rank details" className="h-12" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <LocationPicker
+                    latitude={form.watch('latitude')}
+                    longitude={form.watch('longitude')}
+                    onChange={(coords) => {
+                      form.setValue('latitude', coords.latitude, { shouldValidate: true })
+                      form.setValue('longitude', coords.longitude, { shouldValidate: true })
+                    }}
+                  />
+                  {(form.formState.errors.latitude || form.formState.errors.longitude) && <p className="text-sm font-medium text-destructive">Map pin is required</p>}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-5">
@@ -268,13 +372,31 @@ export default function EditListing() {
 
               <FormField control={form.control} name="images" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Photos <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                  <FormLabel>Room Photos <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
                   <FormControl>
                     <PhotoUpload value={field.value} onChange={field.onChange} maxPhotos={5} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <FormField control={form.control} name="outsidePhoto" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Outside Property Photo</FormLabel>
+                    <FormControl><PhotoUpload value={field.value} onChange={field.onChange} maxPhotos={1} /></FormControl>
+                    <FormDescription>Required for trust and verification.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="streetPhoto" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Street Photo <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormControl><PhotoUpload value={field.value} onChange={field.onChange} maxPhotos={1} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
 
               <div className="flex gap-4 mt-2">
                 <Button type="button" variant="outline" size="lg" className="flex-1 h-12" onClick={() => navigate('/dashboard')}>Cancel</Button>

@@ -6,8 +6,11 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { deleteListing, getListings, type Listing } from '@/lib/listings'
-import { PlusCircle, Pencil, Trash2, MapPin, Home, LogIn } from 'lucide-react'
+import { deleteListing, getListings, refreshListing, type Listing } from '@/lib/listings'
+import { deleteSavedSearch, getSavedSearches, type SavedSearch } from '@/lib/saved-searches'
+import { getTenantNotifications, type TenantNotification } from '@/lib/notifications'
+import { getRoomTypeLabel } from '@/lib/rental-options'
+import { PlusCircle, Pencil, Trash2, MapPin, Home, LogIn, RefreshCw, Bell, ShieldCheck } from 'lucide-react'
 
 function LandlordDashboard({ userId }: { userId: string }) {
   const navigate = useNavigate()
@@ -16,6 +19,7 @@ function LandlordDashboard({ userId }: { userId: string }) {
   const [listings, setListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [refreshingId, setRefreshingId] = useState<string | null>(null)
 
   const loadListings = async () => {
     setIsLoading(true)
@@ -40,6 +44,19 @@ function LandlordDashboard({ userId }: { userId: string }) {
       toast({ title: 'Failed to delete listing', description: error instanceof Error ? error.message : undefined, variant: 'destructive' })
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const handleRefresh = async (listing: Listing) => {
+    setRefreshingId(listing.id)
+    try {
+      await refreshListing(listing.id, userId)
+      toast({ title: 'Listing refreshed', description: 'It will stay active for another 45 days.' })
+      await loadListings()
+    } catch (error) {
+      toast({ title: 'Failed to refresh listing', description: error instanceof Error ? error.message : undefined, variant: 'destructive' })
+    } finally {
+      setRefreshingId(null)
     }
   }
 
@@ -113,16 +130,24 @@ function LandlordDashboard({ userId }: { userId: string }) {
                       <MapPin className="w-2.5 h-2.5" />
                       {listing.location}
                     </Badge>
+                    <Badge variant={listing.verificationStatus === 'verified' ? 'default' : 'outline'} className="text-[10px] sm:text-xs flex items-center gap-0.5 px-1.5 py-0.5">
+                      <ShieldCheck className="w-2.5 h-2.5" />
+                      {listing.verificationStatus === 'verified' ? 'Verified' : 'Trust pending'}
+                    </Badge>
                     <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
-                      {new Date(listing.createdAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      Expires {listing.expiresAt ? new Date(listing.expiresAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' }) : 'not set'}
                     </span>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs sm:text-sm touch-manipulation" onClick={() => navigate(`/listing/${listing.id}`)} data-testid={`button-view-${listing.id}`}>View</Button>
                     <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs sm:text-sm gap-1 touch-manipulation" onClick={() => navigate(`/edit-listing/${listing.id}`)} data-testid={`button-edit-${listing.id}`}>
                       <Pencil className="w-3 h-3" />
                       Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs sm:text-sm gap-1 touch-manipulation" onClick={() => handleRefresh(listing)} disabled={refreshingId === listing.id}>
+                      <RefreshCw className="w-3 h-3" />
+                      Refresh
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -161,19 +186,118 @@ function LandlordDashboard({ userId }: { userId: string }) {
 }
 
 function TenantDashboard() {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
+  const [notifications, setNotifications] = useState<TenantNotification[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const loadTenantData = async () => {
+    if (!user) return
+    setIsLoading(true)
+    try {
+      const [searches, updates] = await Promise.all([
+        getSavedSearches(user.id),
+        getTenantNotifications(user.id),
+      ])
+      setSavedSearches(searches)
+      setNotifications(updates)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadTenantData()
+  }, [user?.id])
+
+  const removeSavedSearch = async (search: SavedSearch) => {
+    if (!user) return
+    try {
+      await deleteSavedSearch(search.id, user.id)
+      setSavedSearches((current) => current.filter((item) => item.id !== search.id))
+      toast({ title: 'Saved search removed' })
+    } catch (error) {
+      toast({ title: 'Could not remove saved search', description: error instanceof Error ? error.message : undefined, variant: 'destructive' })
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-6 sm:py-10 max-w-5xl">
       <div className="mb-6 sm:mb-10">
         <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest mb-1">Tenant Dashboard</p>
         <h1 className="font-display text-2xl sm:text-3xl font-bold">Your Space</h1>
-        <p className="text-muted-foreground text-sm mt-1">Browse and track rooms you are interested in</p>
+        <p className="text-muted-foreground text-sm mt-1">Saved rental preferences and updates from trusted listings</p>
       </div>
 
-      <div className="bg-card border-2 border-dashed border-border rounded-2xl p-10 sm:p-14 flex flex-col items-center justify-center text-center">
-        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-muted flex items-center justify-center mb-4"><Home className="w-6 h-6 sm:w-7 sm:h-7 text-muted-foreground" /></div>
-        <h3 className="font-display text-lg sm:text-xl font-bold mb-2">Find your next home</h3>
-        <p className="text-muted-foreground text-sm mb-5 max-w-sm">Browse hundreds of rooms across South African townships. Filter by location, price, and more.</p>
-        <Link to="/listings"><Button className="gap-2 touch-manipulation">Browse All Rooms</Button></Link>
+      <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
+        <section className="rounded-2xl border bg-card p-5 sm:p-6">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg font-bold">Saved Searches</h2>
+              <p className="text-sm text-muted-foreground">Preferences power future matching notifications.</p>
+            </div>
+            <Link to="/listings"><Button size="sm" className="gap-2"><PlusCircle className="h-4 w-4" />Add</Button></Link>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
+          ) : savedSearches.length > 0 ? (
+            <div className="space-y-3">
+              {savedSearches.map((search) => (
+                <div key={search.id} className="rounded-xl border bg-background p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-display font-semibold">{search.name}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {[search.areas.join(', ') || 'All areas', search.maxPrice ? `up to R${search.maxPrice}` : 'any price', search.roomTypes.map(getRoomTypeLabel).join(', ') || 'any room type'].join(' - ')}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-8 text-destructive hover:text-destructive" onClick={() => removeSavedSearch(search)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border-2 border-dashed p-8 text-center">
+              <Home className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+              <h3 className="font-display font-semibold">No saved preferences yet</h3>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">Browse rooms, apply filters, then save the search to get matching updates.</p>
+              <Link to="/listings"><Button className="mt-4">Browse rooms</Button></Link>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border bg-card p-5 sm:p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="rounded-xl bg-primary/10 p-2 text-primary"><Bell className="h-5 w-5" /></div>
+            <div>
+              <h2 className="font-display text-lg font-bold">Recent Updates</h2>
+              <p className="text-sm text-muted-foreground">Listing matches, price drops, and trust updates.</p>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+          ) : notifications.length > 0 ? (
+            <div className="space-y-3">
+              {notifications.slice(0, 6).map((notification) => (
+                <div key={notification.id} className="rounded-xl border bg-background p-3">
+                  <p className="text-sm font-semibold">{notification.title}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{notification.body}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border-2 border-dashed p-8 text-center">
+              <Bell className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+              <h3 className="font-display font-semibold">No updates yet</h3>
+              <p className="mt-1 text-sm text-muted-foreground">When a room matches your preferences, it will appear here and in the bell.</p>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   )

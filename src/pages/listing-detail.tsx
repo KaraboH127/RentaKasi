@@ -3,8 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ListingMap } from '@/components/ListingMap'
+import { ReportDialog } from '@/components/ReportDialog'
+import { TrustBadges } from '@/components/TrustBadges'
 import { getListingById, type Listing } from '@/lib/listings'
-import { MapPin, Phone, ArrowLeft, Home, Calendar } from 'lucide-react'
+import { getRoomTypeLabel } from '@/lib/rental-options'
+import { MapPin, Phone, ArrowLeft, Home, Calendar, Flag, ShieldCheck, Navigation } from 'lucide-react'
 
 const WhatsAppIcon = () => (
   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -111,6 +115,8 @@ export default function ListingDetail() {
                 <MapPin className="w-3 h-3" />
                 {listing.location}
               </Badge>
+              <Badge variant="outline">{getRoomTypeLabel(listing.roomType)}</Badge>
+              <TrustBadges listing={listing} />
             </div>
 
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3 leading-tight" data-testid="text-listing-title">
@@ -134,16 +140,19 @@ export default function ListingDetail() {
 
             <div className="bg-muted/50 rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 border border-border/60">
               <h3 className="font-display font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-2 sm:mb-3">Location</h3>
-              <div className="flex items-center gap-2 text-foreground font-medium text-sm sm:text-base">
-                <MapPin className="w-4 h-4 text-primary shrink-0" />
-                {listing.location}, South Africa
+              <div className="space-y-2 text-sm sm:text-base">
+                <div className="flex items-center gap-2 text-foreground font-medium">
+                  <MapPin className="w-4 h-4 text-primary shrink-0" />
+                  {listing.location}, South Africa
+                </div>
+                {listing.landmark && <p className="text-muted-foreground">Landmark: {listing.landmark}</p>}
+                {listing.taxiRouteProximity && <p className="text-muted-foreground">Taxi route: {listing.taxiRouteProximity}</p>}
+                {listing.transportInfo && <p className="text-muted-foreground">Transport: {listing.transportInfo}</p>}
               </div>
-              <div className="mt-2 h-16 sm:h-24 rounded-xl bg-muted border border-border/50 flex items-center justify-center text-xs sm:text-sm text-muted-foreground">
-                Contact landlord for exact address
-              </div>
+              <ListingMap listings={[listing]} compact className="mt-4" />
             </div>
 
-            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 sm:p-5 mb-5 sm:mb-6">
+            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 sm:p-5 mb-4 sm:mb-5">
               <h3 className="font-display font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-2 sm:mb-3">Listed By</h3>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-base shrink-0">
@@ -159,12 +168,51 @@ export default function ListingDetail() {
               </div>
             </div>
 
+            <div className="rounded-2xl border border-secondary/20 bg-secondary/5 p-4 sm:p-5 mb-5 sm:mb-6">
+              <div className="flex gap-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-secondary" />
+                <div>
+                  <p className="font-display font-semibold text-sm">Trust check</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Meet in person, verify the property, and never pay a deposit before you are sure the room and landlord details are real.
+                  </p>
+                  {listing.lastVerifiedAt && (
+                    <p className="mt-2 text-[11px] font-medium text-muted-foreground">
+                      Last verified {new Date(listing.lastVerifiedAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" data-testid="button-contact-whatsapp" className="hidden md:block pointer-events-auto" aria-disabled={!cleanPhone}>
               <Button size="lg" className="w-full h-14 text-base font-semibold gap-2 rounded-xl touch-manipulation" disabled={!cleanPhone}>
                 <WhatsAppIcon />
                 Contact via WhatsApp
               </Button>
             </a>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {listing.latitude !== null && listing.longitude !== null && (
+                <a href={`https://www.openstreetmap.org/?mlat=${listing.latitude}&mlon=${listing.longitude}#map=17/${listing.latitude}/${listing.longitude}`} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" className="w-full gap-2">
+                    <Navigation className="h-4 w-4" />
+                    Open map
+                  </Button>
+                </a>
+              )}
+              <ReportDialog targetType="listing" listingId={listing.id} landlordId={listing.userId} title="Report this listing">
+                <Button variant="outline" className="w-full gap-2 text-destructive hover:text-destructive">
+                  <Flag className="h-4 w-4" />
+                  Report listing
+                </Button>
+              </ReportDialog>
+              <ReportDialog targetType="landlord" listingId={listing.id} landlordId={listing.userId} title="Report this landlord">
+                <Button variant="outline" className="w-full gap-2 text-destructive hover:text-destructive">
+                  <Flag className="h-4 w-4" />
+                  Report landlord
+                </Button>
+              </ReportDialog>
+            </div>
           </div>
         </div>
       </div>

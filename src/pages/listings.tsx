@@ -1,37 +1,42 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ListingCard } from '@/components/ListingCard'
+import { ListingMap } from '@/components/ListingMap'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/hooks/use-toast'
 import { getListings, type Listing } from '@/lib/listings'
+import { createSavedSearch } from '@/lib/saved-searches'
+import { LOCATIONS, ROOM_TYPES, type RoomType } from '@/lib/rental-options'
 import { cn } from '@/lib/utils'
-import { Search, X, SlidersHorizontal } from 'lucide-react'
-
-const LOCATIONS = [
-  'Soweto', 'Tembisa', 'Alexandra', 'Katlehong', 'Thokoza',
-  'Vosloorus', 'Mamelodi', 'Soshanguve', 'Mitchells Plain',
-  'Khayelitsha', 'Gugulethu', 'Nyanga',
-]
+import { BellPlus, Map, Search, X, SlidersHorizontal } from 'lucide-react'
 
 export default function Listings() {
   const routerLocation = useLocation()
   const navigate = useNavigate()
   const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search])
+  const { user } = useAuth()
+  const { toast } = useToast()
 
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [selectedLocation, setSelectedLocation] = useState<string>(searchParams.get('location') || '')
   const [maxPrice, setMaxPrice] = useState<string>(searchParams.get('maxPrice') || '')
+  const [roomType, setRoomType] = useState<string>(searchParams.get('roomType') || '')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [mapOpen, setMapOpen] = useState(false)
   const [listings, setListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSavingSearch, setIsSavingSearch] = useState(false)
 
   useEffect(() => {
     setSearch(searchParams.get('search') || '')
     setSelectedLocation(searchParams.get('location') || '')
     setMaxPrice(searchParams.get('maxPrice') || '')
+    setRoomType(searchParams.get('roomType') || '')
   }, [searchParams])
 
   useEffect(() => {
@@ -40,6 +45,7 @@ export default function Listings() {
       search: searchParams.get('search') || undefined,
       location: searchParams.get('location') || undefined,
       maxPrice: searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined,
+      roomType: (searchParams.get('roomType') || undefined) as RoomType | undefined,
     })
       .then(setListings)
       .finally(() => setIsLoading(false))
@@ -51,6 +57,7 @@ export default function Listings() {
     if (search.trim()) params.set('search', search.trim())
     if (selectedLocation && selectedLocation !== 'all') params.set('location', selectedLocation)
     if (maxPrice) params.set('maxPrice', maxPrice)
+    if (roomType && roomType !== 'all') params.set('roomType', roomType)
     const queryString = params.toString()
     navigate(queryString ? `/listings?${queryString}` : '/listings')
     setFiltersOpen(false)
@@ -60,11 +67,34 @@ export default function Listings() {
     setSearch('')
     setSelectedLocation('all')
     setMaxPrice('')
+    setRoomType('')
     setFiltersOpen(false)
     navigate('/listings')
   }
 
-  const activeFilterCount = (selectedLocation && selectedLocation !== 'all' ? 1 : 0) + (maxPrice ? 1 : 0)
+  const saveSearch = async () => {
+    if (!user || user.role !== 'tenant') {
+      toast({ title: 'Tenant account required', description: 'Sign in as a tenant to save rental preferences.', variant: 'destructive' })
+      return
+    }
+    setIsSavingSearch(true)
+    try {
+      await createSavedSearch(user.id, {
+        name: selectedLocation && selectedLocation !== 'all' ? `${selectedLocation} rooms` : search.trim() || 'My rental search',
+        areas: selectedLocation && selectedLocation !== 'all' ? [selectedLocation] : [],
+        maxPrice: maxPrice ? Number(maxPrice) : null,
+        roomTypes: roomType && roomType !== 'all' ? [roomType as RoomType] : [],
+        keywords: search.trim() || null,
+      })
+      toast({ title: 'Search saved', description: 'Matching rooms can now trigger tenant notifications.' })
+    } catch (error) {
+      toast({ title: 'Could not save search', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' })
+    } finally {
+      setIsSavingSearch(false)
+    }
+  }
+
+  const activeFilterCount = (selectedLocation && selectedLocation !== 'all' ? 1 : 0) + (maxPrice ? 1 : 0) + (roomType && roomType !== 'all' ? 1 : 0)
 
   return (
     <div className="flex flex-col flex-grow bg-muted/20">
@@ -142,6 +172,16 @@ export default function Listings() {
                   </SelectContent>
                 </Select>
 
+                <Select value={roomType || 'all'} onValueChange={(val) => setRoomType(val === 'all' ? '' : val)}>
+                  <SelectTrigger className="h-11 sm:h-12 w-full sm:w-44">
+                    <SelectValue placeholder="Any room type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any room type</SelectItem>
+                    {ROOM_TYPES.map((type) => <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
                 <div className="flex gap-2 sm:ml-auto">
                   <Button type="submit" className="flex-1 sm:flex-none h-11 sm:h-12 touch-manipulation gap-2">
                     <Search className="w-4 h-4" />
@@ -161,12 +201,26 @@ export default function Listings() {
       </div>
 
       <div className="container mx-auto px-4 py-5 sm:py-8 flex-grow">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h1 className="font-display text-xl font-bold sm:hidden">Browse Rooms</h1>
-          <Badge variant="secondary" className="font-normal text-xs sm:text-sm px-2.5 py-1 ml-auto sm:ml-0">
+          <div className="ml-auto flex items-center gap-2 sm:ml-0">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setMapOpen((value) => !value)}>
+              <Map className="h-4 w-4" />
+              {mapOpen ? 'Hide map' : 'Map'}
+            </Button>
+            {user?.role === 'tenant' && (
+              <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={saveSearch} disabled={isSavingSearch}>
+                <BellPlus className="h-4 w-4" />
+                Save
+              </Button>
+            )}
+          </div>
+          <Badge variant="secondary" className="font-normal text-xs sm:text-sm px-2.5 py-1">
             {isLoading ? 'Searching...' : `${listings.length} rooms found`}
           </Badge>
         </div>
+
+        {mapOpen && !isLoading && <ListingMap listings={listings} className="mb-5 sm:mb-8" />}
 
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">

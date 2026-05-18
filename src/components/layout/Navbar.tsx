@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
+import { NotificationBell } from '@/components/NotificationBell'
 import { LogOut, User as UserIcon, PlusCircle, Building2 } from 'lucide-react'
 
 export function Navbar() {
@@ -27,6 +28,7 @@ export function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-4 border-l pl-4 ml-2">
+              <NotificationBell />
               <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-2">
                 <UserIcon className="w-4 h-4" />
                 Dashboard
@@ -58,9 +60,12 @@ export function Navbar() {
 
         <div className="md:hidden flex items-center gap-2">
           {user ? (
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground h-9 px-3">
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <>
+              <NotificationBell />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground h-9 px-3">
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </>
           ) : (
             <Link to="/register">
               <Button size="sm" className="h-9 px-4 text-sm">Get Started</Button>

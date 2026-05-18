@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { TrustBadges } from '@/components/TrustBadges'
+import { getRoomTypeLabel } from '@/lib/rental-options'
 import { MapPin } from 'lucide-react'
 import type { Listing } from '@/lib/listings'
 
@@ -40,6 +42,11 @@ export function ListingCard({ listing, featured = false }: ListingCardProps) {
               <p className="font-display font-bold text-sm sm:text-base lg:text-lg text-primary leading-none">R{listing.price}</p>
               <span className="text-[10px] text-muted-foreground">/mo</span>
             </div>
+          </div>
+
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            <Badge variant="outline" className="px-1.5 py-0.5 text-[10px] font-medium">{getRoomTypeLabel(listing.roomType)}</Badge>
+            <TrustBadges listing={listing} />
           </div>
 
           <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-1 hidden sm:block flex-grow">
