@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { readLastLocation, reverseGeocode, saveLastLocation, type StoredLocation } from '@/lib/location'
+import { reverseGeocodeGoogle } from '@/lib/google-maps'
 
 export type GeolocationStatus = 'idle' | 'checking' | 'prompt' | 'requesting' | 'granted' | 'denied' | 'unsupported' | 'blocked' | 'unavailable' | 'timeout' | 'error'
 export type GeolocationPermission = PermissionState | 'unsupported' | 'unknown'
@@ -165,15 +166,24 @@ export function useGeolocation({ autoRequestIfGranted = false }: { autoRequestIf
       let address: string | null = null
 
       try {
-        const controller = new AbortController()
-        const timeout = window.setTimeout(() => controller.abort(), 6000)
-        try {
-          address = await reverseGeocode(coords.latitude, coords.longitude, controller.signal)
-        } finally {
-          window.clearTimeout(timeout)
-        }
+        const resolved = await reverseGeocodeGoogle(coords)
+        address = resolved?.address ?? null
       } catch {
-        // Reverse geocoding is a progressive enhancement. The coordinates remain usable without it.
+        // Google is preferred for South African address quality; OpenStreetMap remains a no-key fallback.
+      }
+
+      if (!address) {
+        try {
+          const controller = new AbortController()
+          const timeout = window.setTimeout(() => controller.abort(), 6000)
+          try {
+            address = await reverseGeocode(coords.latitude, coords.longitude, controller.signal)
+          } finally {
+            window.clearTimeout(timeout)
+          }
+        } catch {
+          // Reverse geocoding is a progressive enhancement. The coordinates remain usable without it.
+        }
       }
 
       const lastLocation = {
