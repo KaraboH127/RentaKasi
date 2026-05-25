@@ -46,7 +46,7 @@ export function ListingCard({ listing, featured = false }: ListingCardProps) {
               <MapPin className="w-2.5 h-2.5" />
               <span className="truncate">{listing.landmark || listing.location}</span>
             </Badge>
-            <div className="rounded-full bg-card/95 px-2 py-1 text-right shadow-sm backdrop-blur">
+            <div className="rounded-full bg-card/95 px-3 py-2 text-right shadow-sm backdrop-blur">
               <p className="font-display text-sm font-bold leading-none text-primary sm:text-base">R{listing.price}</p>
               <span className="text-[10px] text-muted-foreground">/mo</span>
             </div>
