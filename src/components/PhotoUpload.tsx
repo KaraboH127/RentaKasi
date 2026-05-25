@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
-import { Camera, X, ImagePlus, Loader2 } from 'lucide-react'
+import { Camera, X, ImagePlus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 interface PhotoUploadProps {
@@ -87,9 +88,7 @@ export function PhotoUpload({ value, onChange, maxPhotos = 5 }: PhotoUploadProps
           )}
 
           {uploading && (
-            <div className="aspect-square rounded-xl bg-muted flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
-            </div>
+            <Skeleton className="aspect-square rounded-xl" />
           )}
         </div>
       )}
@@ -106,8 +105,8 @@ export function PhotoUpload({ value, onChange, maxPhotos = 5 }: PhotoUploadProps
         >
           {uploading ? (
             <>
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <span className="text-sm text-muted-foreground">Uploading...</span>
+              <Skeleton className="h-14 w-14 rounded-2xl" />
+              <span className="text-sm text-muted-foreground">Preparing photo...</span>
             </>
           ) : (
             <>

@@ -6,7 +6,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Skeleton } from '@/components/ui/skeleton'
+import { FullPageLoader } from '@/components/skeletons'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
@@ -123,26 +123,7 @@ export default function EditListing() {
   }
 
   if (isLoading) {
-    return (
-      <div className="bg-muted/20 min-h-screen pb-20">
-        <div className="border-b bg-card sticky top-16 z-40">
-          <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-            <Skeleton className="h-5 w-24" />
-            <Skeleton className="h-6 w-36" />
-          </div>
-        </div>
-        <div className="container mx-auto px-4 py-10 max-w-2xl">
-          <div className="bg-card rounded-2xl border shadow-sm p-8 flex flex-col gap-6">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i}>
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-12 w-full rounded-lg" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
+    return <FullPageLoader label="Loading listing editor" />
   }
 
   if (isError || !listing || !id) {
@@ -326,6 +307,11 @@ export default function EditListing() {
                   <LocationPicker
                     latitude={form.watch('latitude')}
                     longitude={form.watch('longitude')}
+                    onAddressDetected={(address) => {
+                      if (!form.getValues('address')) {
+                        form.setValue('address', address, { shouldValidate: true })
+                      }
+                    }}
                     onChange={(coords) => {
                       form.setValue('latitude', coords.latitude, { shouldValidate: true })
                       form.setValue('longitude', coords.longitude, { shouldValidate: true })

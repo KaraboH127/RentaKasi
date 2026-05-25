@@ -202,6 +202,25 @@
   .rk-card-hover {
     @apply hover:border-primary/30 hover:shadow-lg hover:shadow-black/[0.06];
   }
+
+  .rk-skeleton {
+    @apply relative overflow-hidden bg-muted/70;
+  }
+
+  .rk-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, hsl(var(--background) / 0.58), transparent);
+    animation: rk-shimmer 1.45s ease-in-out infinite;
+  }
+}
+
+@keyframes rk-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -212,5 +231,9 @@
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .rk-skeleton::after {
+    animation: none !important;
   }
 }

@@ -5,7 +5,7 @@ import { ListingMap } from '@/components/ListingMap'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
+import { MapSkeleton, PropertyCardSkeletonGrid } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
@@ -216,26 +216,16 @@ export default function Listings() {
             )}
           </div>
           <Badge variant="secondary" className="font-normal text-xs sm:text-sm px-2.5 py-1">
-            {isLoading ? 'Searching...' : `${listings.length} rooms found`}
+            {isLoading ? <span className="block h-3 w-20 rounded rk-skeleton" aria-hidden="true" /> : `${listings.length} rooms found`}
           </Badge>
         </div>
 
-        {mapOpen && !isLoading && <ListingMap listings={listings} className="mb-5 sm:mb-8" />}
+        {mapOpen && (isLoading ? <MapSkeleton className="mb-5 sm:mb-8" /> : <ListingMap listings={listings} className="mb-5 sm:mb-8" />)}
 
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rk-surface rounded-2xl overflow-hidden">
-                <Skeleton className="w-full aspect-[4/3]" />
-                <div className="p-3">
-                  <Skeleton className="h-4 w-3/4 mb-2" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <PropertyCardSkeletonGrid />
         ) : listings.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6 animate-in fade-in-0 duration-300">
             {listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}
           </div>
         ) : (

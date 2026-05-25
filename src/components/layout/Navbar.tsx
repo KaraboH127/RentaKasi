@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { NotificationBell } from '@/components/NotificationBell'
 import { LogOut, User as UserIcon, PlusCircle, Building2 } from 'lucide-react'
 
 export function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -36,7 +37,13 @@ export function Navbar() {
             Browse Rooms
           </Link>
 
-          {user ? (
+          {loading ? (
+            <div className="flex items-center gap-3 border-l pl-4 ml-2" aria-busy="true" aria-label="Loading navigation">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <Skeleton className="h-10 w-28 rounded-full" />
+              <Skeleton className="h-10 w-24 rounded-full" />
+            </div>
+          ) : user ? (
             <div className="flex items-center gap-2 border-l pl-4 ml-2">
               <NotificationBell />
               <Link to="/dashboard" className={navLinkClass('/dashboard')}>
@@ -69,7 +76,9 @@ export function Navbar() {
         </nav>
 
         <div className="md:hidden flex items-center gap-2">
-          {user ? (
+          {loading ? (
+            <Skeleton className="h-9 w-24 rounded-full" />
+          ) : user ? (
             <>
               <NotificationBell />
               <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground h-9 px-3">

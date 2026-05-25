@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { TrustBadges } from '@/components/TrustBadges'
 import { getRoomTypeLabel } from '@/lib/rental-options'
 import { MapPin, ShieldCheck } from 'lucide-react'
@@ -11,6 +13,7 @@ interface ListingCardProps {
 }
 
 export function ListingCard({ listing, featured = false }: ListingCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false)
   const primaryImage = listing.images?.[0] || listing.outsidePhotoUrl || 'https://placehold.co/600x400/e3ddd8/1f242d?text=No+Image'
   const isTrusted = listing.landlordVerified || listing.verificationStatus === 'verified'
 
@@ -18,12 +21,15 @@ export function ListingCard({ listing, featured = false }: ListingCardProps) {
     <Link to={`/listing/${listing.id}`} className="group block rounded-2xl touch-manipulation rk-focus">
       <article className="rk-surface rk-card-hover rk-interactive h-full overflow-hidden rounded-2xl flex flex-col">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+          {!imageLoaded && <Skeleton className="absolute inset-0 z-10 rounded-none" />}
           <img
             src={primaryImage}
             alt={listing.title}
-            className="object-cover w-full h-full transition-transform duration-500 ease-out group-hover:scale-[1.045]"
+            className="object-cover w-full h-full transition-[opacity,transform] duration-500 ease-out group-hover:scale-[1.045]"
             loading="lazy"
             decoding="async"
+            onLoad={() => setImageLoaded(true)}
+            style={{ opacity: imageLoaded ? 1 : 0 }}
           />
           <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent opacity-80" />
           <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">

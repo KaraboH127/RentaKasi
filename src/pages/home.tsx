@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ListingCard } from '@/components/ListingCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
+import { DashboardStatSkeleton, PropertyCardSkeleton } from '@/components/skeletons'
 import { getListingStats, getListings, type Listing } from '@/lib/listings'
 import { Search, ShieldCheck, Home as HomeIcon, Map } from 'lucide-react'
 
@@ -82,12 +82,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             {isStatsLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-muted/50 rounded-xl p-4 flex flex-col items-center">
-                  <Skeleton className="h-8 w-16 mb-2" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-              ))
+              Array.from({ length: 4 }).map((_, i) => <DashboardStatSkeleton key={i} className="rounded-xl" />)
             ) : stats ? (
               <>
                 <div className="bg-primary/5 rounded-xl p-4 sm:p-6 flex flex-col items-center text-center">
@@ -160,13 +155,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {isListingsLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-3">
-                  <Skeleton className="w-full aspect-[4/3] rounded-xl" />
-                  <Skeleton className="h-5 w-2/3" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              ))
+              Array.from({ length: 3 }).map((_, i) => <PropertyCardSkeleton key={i} />)
             ) : featuredListings.length > 0 ? (
               featuredListings.map((listing) => <ListingCard key={listing.id} listing={listing} featured />)
             ) : (

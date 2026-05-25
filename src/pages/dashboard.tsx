@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { DashboardStatSkeleton, FullPageLoader, MessageSkeleton, TableRowSkeleton } from '@/components/skeletons'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { deleteListing, getListings, refreshListing, type Listing } from '@/lib/listings'
@@ -76,8 +76,15 @@ function LandlordDashboard({ userId }: { userId: string }) {
         </Link>
       </div>
 
-      {!isLoading && (
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10" aria-busy={isLoading}>
+        {isLoading ? (
+          <>
+            <DashboardStatSkeleton />
+            <DashboardStatSkeleton />
+            <DashboardStatSkeleton />
+          </>
+        ) : (
+          <>
           <div className="rk-surface rounded-2xl p-4 sm:p-6">
             <p className="text-muted-foreground text-xs sm:text-sm mb-1">Listings</p>
             <p className="font-display text-2xl sm:text-3xl font-bold text-primary" data-testid="stat-total-listings">{listings.length}</p>
@@ -90,24 +97,16 @@ function LandlordDashboard({ userId }: { userId: string }) {
             <p className="text-muted-foreground text-xs sm:text-sm mb-1">Areas</p>
             <p className="font-display text-2xl sm:text-3xl font-bold">{new Set(listings.map((listing) => listing.location)).size}</p>
           </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       <div>
         <h2 className="font-display text-lg sm:text-xl font-bold mb-4 sm:mb-5">Your Listings</h2>
 
         {isLoading ? (
-          <div className="flex flex-col gap-3 sm:gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-card border rounded-2xl p-4 flex gap-4">
-                <Skeleton className="w-20 h-16 sm:w-28 sm:h-20 rounded-xl shrink-0" />
-                <div className="flex-1">
-                  <Skeleton className="h-5 w-1/2 mb-2" />
-                  <Skeleton className="h-4 w-1/3 mb-3" />
-                  <Skeleton className="h-8 w-36" />
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col gap-3 sm:gap-4" aria-busy="true" aria-label="Loading listings">
+            {Array.from({ length: 3 }).map((_, i) => <TableRowSkeleton key={i} />)}
           </div>
         ) : listings.length > 0 ? (
           <div className="flex flex-col gap-3 sm:gap-4">
@@ -241,7 +240,7 @@ function TenantDashboard() {
           </div>
 
           {isLoading ? (
-            <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
+            <div className="space-y-3" aria-busy="true" aria-label="Loading saved searches">{Array.from({ length: 2 }).map((_, i) => <MessageSkeleton key={i} />)}</div>
           ) : savedSearches.length > 0 ? (
             <div className="space-y-3">
               {savedSearches.map((search) => (
@@ -280,7 +279,7 @@ function TenantDashboard() {
           </div>
 
           {isLoading ? (
-            <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+            <div className="space-y-3" aria-busy="true" aria-label="Loading recent updates">{Array.from({ length: 3 }).map((_, i) => <MessageSkeleton key={i} compact />)}</div>
           ) : notifications.length > 0 ? (
             <div className="space-y-3">
               {notifications.slice(0, 6).map((notification) => (
@@ -308,7 +307,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-16"><Skeleton className="h-40 w-full rounded-2xl" /></div>
+    return <FullPageLoader label="Loading dashboard" />
   }
 
   if (!isAuthenticated || !user) {

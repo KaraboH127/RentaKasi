@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { MapSkeleton, ProfileSkeleton } from '@/components/skeletons'
 import { ListingMap } from '@/components/ListingMap'
 import { ReportDialog } from '@/components/ReportDialog'
 import { TrustBadges } from '@/components/TrustBadges'
@@ -38,17 +38,23 @@ export default function ListingDetail() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <Skeleton className="h-7 w-36 mb-6" />
-        <div className="grid md:grid-cols-2 gap-8">
-          <Skeleton className="aspect-[4/3] rounded-2xl" />
-          <div className="flex flex-col gap-4">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-12 w-full mt-4" />
+      <div className="container mx-auto px-4 py-8 max-w-5xl" aria-busy="true" aria-label="Loading listing details">
+        <div className="mb-6 h-7 w-36 rounded-md rk-skeleton" />
+        <div className="grid gap-8 md:grid-cols-5">
+          <div className="md:col-span-3">
+            <div className="aspect-[4/3] rounded-2xl rk-skeleton" />
+            <div className="mt-3 grid grid-cols-5 gap-2">
+              {Array.from({ length: 5 }).map((_, i) => <div key={i} className="aspect-square rounded-lg rk-skeleton" />)}
+            </div>
+          </div>
+          <div className="space-y-4 md:col-span-2">
+            <div className="h-6 w-28 rounded-full rk-skeleton" />
+            <div className="h-8 w-4/5 rounded-md rk-skeleton" />
+            <div className="h-10 w-32 rounded-md rk-skeleton" />
+            <div className="h-32 rounded-2xl rk-skeleton" />
+            <MapSkeleton compact />
+            <ProfileSkeleton />
+            <div className="h-14 rounded-xl rk-skeleton" />
           </div>
         </div>
       </div>

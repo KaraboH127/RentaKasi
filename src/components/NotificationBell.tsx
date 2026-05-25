@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, CheckCheck, Loader2 } from 'lucide-react'
+import { Bell, CheckCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { MessageSkeleton } from '@/components/skeletons'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTenantNotifications, markAllNotificationsRead, markNotificationRead, subscribeToTenantNotifications, type TenantNotification } from '@/lib/notifications'
 import { cn } from '@/lib/utils'
@@ -97,9 +98,8 @@ export function NotificationBell() {
 
           <div className="max-h-[70vh] overflow-y-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading updates
+              <div className="space-y-2 p-3" aria-busy="true" aria-label="Loading notifications">
+                {Array.from({ length: 4 }).map((_, index) => <MessageSkeleton key={index} compact />)}
               </div>
             ) : notifications.length > 0 ? (
               notifications.map((notification) => {

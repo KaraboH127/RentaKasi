@@ -247,6 +247,11 @@ export default function CreateListing() {
                   <LocationPicker
                     latitude={form.watch('latitude')}
                     longitude={form.watch('longitude')}
+                    onAddressDetected={(address) => {
+                      if (!form.getValues('address')) {
+                        form.setValue('address', address, { shouldValidate: true })
+                      }
+                    }}
                     onChange={(coords) => {
                       form.setValue('latitude', coords.latitude, { shouldValidate: true })
                       form.setValue('longitude', coords.longitude, { shouldValidate: true })
