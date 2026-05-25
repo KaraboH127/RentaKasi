@@ -76,6 +76,13 @@ The component integrates seamlessly with `LocationPicker`:
 The component now uses the `gmp-placeselect` event instead of `place_changed`:
 
 ```typescript
+const placeAutocomplete = new PlaceAutocompleteElement()
+
+// Set configuration properties directly on the element (not in constructor)
+placeAutocomplete.componentRestrictions = { country: 'za' }
+placeAutocomplete.locationBias = getSouthAfricaBoundsForPlaces(googleMaps)
+
+// Listen for selections
 placeAutocomplete.addEventListener('gmp-placeselect', async () => {
   const place = placeAutocomplete.getPlace?.()
   const location = await extractPlaceDetails(place)
@@ -85,17 +92,17 @@ placeAutocomplete.addEventListener('gmp-placeselect', async () => {
 
 ### 2. South Africa Location Biasing
 The component automatically applies biasing through:
-- `locationBias`: Prioritizes results within South Africa bounds
 - `componentRestrictions`: Restricts to South Africa (country: 'za')
+- `locationBias`: Prioritizes results within South Africa bounds
 
 ```typescript
-const placeAutocomplete = new PlaceAutocompleteElement({
-  requestOptions: {
-    componentRestrictions: { country: 'za' },
-    locationBias: getSouthAfricaBoundsForPlaces(googleMaps),
-    language: 'en',
-  },
-})
+const placeAutocomplete = new PlaceAutocompleteElement()
+
+// Set properties directly (modern pattern)
+placeAutocomplete.componentRestrictions = { country: 'za' }
+placeAutocomplete.locationBias = getSouthAfricaBoundsForPlaces(googleMaps)
+
+// Result: South African addresses prioritized, international results deprioritized
 ```
 
 ### 3. Web Component Styling

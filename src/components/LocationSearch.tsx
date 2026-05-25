@@ -45,13 +45,11 @@ export const LocationSearch = forwardRef<HTMLInputElement, LocationSearchProps>(
         containerRef.current!.innerHTML = ''
 
         // Create the PlaceAutocompleteElement instance
-        const placeAutocomplete = new PlaceAutocompleteElement({
-          requestOptions: {
-            componentRestrictions: { country: 'za' },
-            locationBias: getSouthAfricaBoundsForPlaces(googleMaps),
-            language: 'en',
-          },
-        })
+        const placeAutocomplete = new PlaceAutocompleteElement()
+
+        // Set properties directly on the element (not via constructor options)
+        placeAutocomplete.componentRestrictions = { country: 'za' }
+        placeAutocomplete.locationBias = getSouthAfricaBoundsForPlaces(googleMaps)
 
         placeAutocompleteRef.current = placeAutocomplete
 

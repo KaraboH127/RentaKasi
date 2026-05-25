@@ -207,21 +207,30 @@ function FallbackMap({ center, className, error, isDropMode, onDrop, onDropModeC
 
 function createMarker(googleMaps: any, map: any, position: { lat: number; lng: number }, draggable: boolean, onDragEnd: (coords: MapCoordinates) => void) {
   if (googleMaps.maps.marker?.AdvancedMarkerElement) {
-    const pin = googleMaps.maps.marker.PinElement
+    // Create PinElement with styling
+    const pinElement = googleMaps.maps.marker.PinElement
       ? new googleMaps.maps.marker.PinElement({
           background: '#e85d2a',
           borderColor: '#ffffff',
           glyphColor: '#ffffff',
         })
-      : undefined
+      : null
 
-    const marker = new googleMaps.maps.marker.AdvancedMarkerElement({
-      content: pin?.element,
+    // Create AdvancedMarkerElement with proper content handling
+    // The pinElement.element property is deprecated; use the pinElement's DOM content directly
+    const markerOptions: any = {
       gmpDraggable: draggable,
       map,
       position,
       title: 'Selected location',
-    })
+    }
+
+    // Add content if PinElement is available and has a valid element
+    if (pinElement) {
+      markerOptions.content = pinElement.element || pinElement
+    }
+
+    const marker = new googleMaps.maps.marker.AdvancedMarkerElement(markerOptions)
 
     marker.addListener('dragend', () => {
       const nextPosition = marker.position

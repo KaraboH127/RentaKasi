@@ -79,13 +79,13 @@ Complete rewrite to use PlaceAutocompleteElement:
 
 ### Web Component Initialization
 ```typescript
-const placeAutocomplete = new PlaceAutocompleteElement({
-  requestOptions: {
-    componentRestrictions: { country: 'za' },
-    locationBias: getSouthAfricaBoundsForPlaces(googleMaps),
-    language: 'en',
-  },
-})
+const placeAutocomplete = new PlaceAutocompleteElement()
+
+// Set properties directly on the element instance (not via constructor)
+placeAutocomplete.componentRestrictions = { country: 'za' }
+placeAutocomplete.locationBias = getSouthAfricaBoundsForPlaces(googleMaps)
+
+// Properties are set directly, not through requestOptions
 ```
 
 ### Event Handling
