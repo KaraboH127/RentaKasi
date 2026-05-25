@@ -172,3 +172,49 @@ function geocode(geocoder: any, request: Record<string, unknown>): Promise<any[]
     })
   })
 }
+
+/**
+ * Get bounds in the format required by PlaceAutocompleteElement.
+ * Converts LatLngBounds to the expected format.
+ */
+export function getSouthAfricaBoundsForPlaces(google: any) {
+  const bounds = getSouthAfricaBounds(google)
+  return {
+    north: bounds.getNorthEast().lat(),
+    south: bounds.getSouthWest().lat(),
+    east: bounds.getNorthEast().lng(),
+    west: bounds.getSouthWest().lng(),
+  }
+}
+
+/**
+ * Extract place details from PlaceAutocompleteElement selection.
+ * Handles the Place object returned by the new API.
+ */
+export async function extractPlaceDetails(place: any): Promise<ResolvedMapLocation | null> {
+  if (!place?.geometry?.location) return null
+
+  const location = place.geometry.location
+  const latitude = typeof location.lat === 'function' ? location.lat() : location.lat
+  const longitude = typeof location.lng === 'function' ? location.lng() : location.lng
+
+  return {
+    latitude: Number(latitude.toFixed(6)),
+    longitude: Number(longitude.toFixed(6)),
+    address: place.formatted_address || place.name || null,
+    placeId: place.place_id ?? null,
+  }
+}
+
+/**
+ * Get the Places library explicitly for use with PlaceAutocompleteElement.
+ */
+export async function getPlacesLibrary() {
+  const google = await loadGoogleMapsApi()
+  
+  if (google.maps.importLibrary) {
+    return google.maps.importLibrary('places')
+  }
+
+  return google.maps.places
+}
