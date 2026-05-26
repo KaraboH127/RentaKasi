@@ -3,8 +3,19 @@ import { LocateFixed, MapPin } from 'lucide-react'
 import { MapSkeletonLoader } from '@/components/MapSkeletonLoader'
 import { Button } from '@/components/ui/button'
 import { useGoogleMaps } from '@/hooks/use-google-maps'
+import {
+  getDefaultMapCenter,
+  getGoogleMapsMapId,
+  getSouthAfricaBounds,
+  reverseGeocodeGoogle,
+  toGoogleLatLng,
+  createMarkerWithAdvancedMarkerElement,
+  updateMarkerPosition,
+  importGoogleMapsLibraries,
+  type MapCoordinates,
+  type ResolvedMapLocation,
+} from '@/lib/location-engine'
 import { cn } from '@/lib/utils'
-import { getDefaultMapCenter, getGoogleMapsMapId, getSouthAfricaBounds, reverseGeocodeGoogle, toGoogleLatLng, type MapCoordinates, type ResolvedMapLocation } from '@/lib/google-maps'
 import { readLastLocation } from '@/lib/location'
 
 interface MapViewProps {
@@ -51,10 +62,9 @@ export function MapView({ allowDropPin = true, center, className, isDropMode = f
         const resolved = await reverseGeocodeGoogle(coords).catch(() => ({ ...coords, address: null, placeId: null }))
         onLocationChange({ ...coords, address: resolved?.address ?? null, placeId: resolved?.placeId ?? null })
       })
-    } else if (markerRef.current.setPosition) {
-      markerRef.current.setPosition(position)
     } else {
-      markerRef.current.position = position
+      // Use Location Engine's updateMarkerPosition for proper handling
+      updateMarkerPosition(markerRef.current, position)
     }
 
     // Production location apps should animate to the chosen point instead of requiring users to move the map.
@@ -206,59 +216,10 @@ function FallbackMap({ center, className, error, isDropMode, onDrop, onDropModeC
 }
 
 function createMarker(googleMaps: any, map: any, position: { lat: number; lng: number }, draggable: boolean, onDragEnd: (coords: MapCoordinates) => void) {
-  if (googleMaps.maps.marker?.AdvancedMarkerElement) {
-    // Create PinElement with styling
-    const pinElement = googleMaps.maps.marker.PinElement
-      ? new googleMaps.maps.marker.PinElement({
-          background: '#e85d2a',
-          borderColor: '#ffffff',
-          glyphColor: '#ffffff',
-        })
-      : null
-
-    // Create AdvancedMarkerElement with proper content handling
-    // The pinElement.element property is deprecated; use the pinElement's DOM content directly
-    const markerOptions: any = {
-      gmpDraggable: draggable,
-      map,
-      position,
-      title: 'Selected location',
-    }
-
-    // Add content if PinElement is available and has a valid element
-    if (pinElement) {
-      markerOptions.content = pinElement.element || pinElement
-    }
-
-    const marker = new googleMaps.maps.marker.AdvancedMarkerElement(markerOptions)
-
-    marker.addListener('dragend', () => {
-      const nextPosition = marker.position
-      const lat = typeof nextPosition?.lat === 'function' ? nextPosition.lat() : nextPosition?.lat
-      const lng = typeof nextPosition?.lng === 'function' ? nextPosition.lng() : nextPosition?.lng
-      if (Number.isFinite(lat) && Number.isFinite(lng)) {
-        onDragEnd({ latitude: Number(lat.toFixed(6)), longitude: Number(lng.toFixed(6)) })
-      }
-    })
-
-    return marker
-  }
-
-  const marker = new googleMaps.maps.Marker({
-    animation: googleMaps.maps.Animation?.DROP,
-    draggable,
+  return createMarkerWithAdvancedMarkerElement(googleMaps, {
     map,
     position,
-    title: 'Selected location',
+    draggable,
+    onDragEnd,
   })
-
-  marker.addListener('dragend', (event: any) => {
-    if (!event.latLng) return
-    onDragEnd({
-      latitude: Number(event.latLng.lat().toFixed(6)),
-      longitude: Number(event.latLng.lng().toFixed(6)),
-    })
-  })
-
-  return marker
 }

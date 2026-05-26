@@ -2,7 +2,12 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Keyb
 import { MapPin, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useGoogleMaps } from '@/hooks/use-google-maps'
-import { extractPlaceDetails, geocodeAddress, getSouthAfricaBoundsForPlaces, type ResolvedMapLocation } from '@/lib/google-maps'
+import {
+  extractPlaceDetails,
+  geocodeAddress,
+  initializePlaceAutocomplete,
+  type ResolvedMapLocation,
+} from '@/lib/location-engine'
 
 interface LocationSearchProps {
   disabled?: boolean
@@ -18,96 +23,65 @@ export const LocationSearch = forwardRef<HTMLInputElement, LocationSearchProps>(
 ) {
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const placeAutocompleteRef = useRef<any | null>(null)
-  const listenerRef = useRef<{ remove: () => void } | null>(null)
+  const autocompleteRef = useRef<any | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const { googleMaps, isReady } = useGoogleMaps()
 
   useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement)
 
-  // Initialize PlaceAutocompleteElement
+  // Initialize PlaceAutocompleteElement using Location Engine
   useEffect(() => {
-    if (!isReady || !googleMaps || !containerRef.current || placeAutocompleteRef.current) return
+    if (!isReady || !googleMaps || !containerRef.current || autocompleteRef.current) return
 
-    // Dynamically import the Places library to get PlaceAutocompleteElement
     const initializeAutocomplete = async () => {
       try {
-        const PlacesLibrary = await googleMaps.maps.importLibrary('places')
-        const { PlaceAutocompleteElement } = PlacesLibrary
+        const autocomplete = await initializePlaceAutocomplete({
+          container: containerRef.current!,
+          onPlaceSelect: async () => {
+            const place = autocomplete.getPlace?.()
 
-        if (!PlaceAutocompleteElement) {
-          console.error('PlaceAutocompleteElement is not available in the Places library')
-          return
-        }
+            if (!place?.geometry?.location) {
+              setMessage('Choose one of the suggested addresses so we can place the pin.')
+              return
+            }
 
-        // Clear the container first
-        containerRef.current!.innerHTML = ''
+            try {
+              const location = await extractPlaceDetails(place)
+              if (!location) {
+                setMessage('Could not extract location details. Please try again.')
+                return
+              }
 
-        // Create the PlaceAutocompleteElement instance
-        const placeAutocomplete = new PlaceAutocompleteElement()
+              const address = place.formatted_address || place.name || value
+              onValueChange(address)
+              setMessage('Location selected successfully.')
+              onLocationSelect(location)
+            } catch (error) {
+              console.error('Error processing place selection:', error)
+              setMessage('Error processing the selected address. Please try again.')
+            }
+          },
+        })
 
-        // Set properties directly on the element (not via constructor options)
-        placeAutocomplete.componentRestrictions = { country: 'za' }
-        placeAutocomplete.locationBias = getSouthAfricaBoundsForPlaces(googleMaps)
-
-        placeAutocompleteRef.current = placeAutocomplete
+        autocompleteRef.current = autocomplete
 
         // Apply custom styling to match the input field
-        const placeAutocompleteInput = placeAutocomplete.querySelector('input') as HTMLInputElement | null
-        if (placeAutocompleteInput) {
-          placeAutocompleteInput.className =
+        if (autocomplete.input) {
+          autocomplete.input.className =
             'h-12 w-full rounded-xl border bg-background pl-10 pr-3 text-base outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20'
-          placeAutocompleteInput.placeholder = placeholder
-          placeAutocompleteInput.disabled = disabled
-          placeAutocompleteInput.value = value
-          placeAutocompleteInput.autocomplete = 'street-address'
+          autocomplete.input.placeholder = placeholder
+          autocomplete.input.disabled = disabled
+          autocomplete.input.value = value
+          autocomplete.input.autocomplete = 'street-address'
 
           // Sync input value changes
-          placeAutocompleteInput.addEventListener('input', (e) => {
+          autocomplete.input.addEventListener('input', (e: Event) => {
             const inputElement = e.target as HTMLInputElement
             setMessage(null)
             onValueChange(inputElement.value)
           })
         }
-
-        // Listen to place selection
-        const handlePlaceSelect = async () => {
-          const place = placeAutocomplete.getPlace?.()
-
-          if (!place?.geometry?.location) {
-            setMessage('Choose one of the suggested addresses so we can place the pin.')
-            return
-          }
-
-          try {
-            const location = await extractPlaceDetails(place)
-            if (!location) {
-              setMessage('Could not extract location details. Please try again.')
-              return
-            }
-
-            const address = place.formatted_address || place.name || value
-            onValueChange(address)
-            setMessage('Location selected successfully.')
-            onLocationSelect(location)
-          } catch (error) {
-            console.error('Error processing place selection:', error)
-            setMessage('Error processing the selected address. Please try again.')
-          }
-        }
-
-        // Create a listener object for cleanup
-        const abortController = new AbortController()
-        placeAutocomplete.addEventListener('gmp-placeselect', handlePlaceSelect, { signal: abortController.signal })
-
-        listenerRef.current = {
-          remove: () => {
-            abortController.abort()
-          },
-        }
-
-        containerRef.current!.appendChild(placeAutocomplete)
       } catch (error) {
         console.error('Failed to initialize PlaceAutocompleteElement:', error)
       }
@@ -116,30 +90,23 @@ export const LocationSearch = forwardRef<HTMLInputElement, LocationSearchProps>(
     void initializeAutocomplete()
 
     return () => {
-      listenerRef.current?.remove()
-      listenerRef.current = null
-      placeAutocompleteRef.current = null
+      if (autocompleteRef.current?.cleanup) {
+        autocompleteRef.current.cleanup()
+      }
+      autocompleteRef.current = null
     }
   }, [googleMaps, isReady, onLocationSelect, onValueChange, placeholder, disabled, value])
 
   // Update PlaceAutocompleteElement value when prop changes
   useEffect(() => {
-    if (!placeAutocompleteRef.current) return
-
-    const placeAutocompleteInput = placeAutocompleteRef.current.querySelector('input') as HTMLInputElement | null
-    if (placeAutocompleteInput && placeAutocompleteInput.value !== value) {
-      placeAutocompleteInput.value = value
-    }
+    if (!autocompleteRef.current) return
+    autocompleteRef.current.setValue(value)
   }, [value])
 
   // Update disabled state
   useEffect(() => {
-    if (!placeAutocompleteRef.current) return
-
-    const placeAutocompleteInput = placeAutocompleteRef.current.querySelector('input') as HTMLInputElement | null
-    if (placeAutocompleteInput) {
-      placeAutocompleteInput.disabled = disabled
-    }
+    if (!autocompleteRef.current) return
+    autocompleteRef.current.setDisabled(disabled)
   }, [disabled])
 
   const searchTypedAddress = async () => {
@@ -169,19 +136,10 @@ export const LocationSearch = forwardRef<HTMLInputElement, LocationSearchProps>(
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter') return
 
-    // Allow Enter key to work with PlaceAutocompleteElement dropdown
-    // But if dropdown is not active, trigger manual search
-    const placeAutocompleteInput = placeAutocompleteRef.current?.querySelector('input') as HTMLInputElement | null
-    if (placeAutocompleteInput && placeAutocompleteInput === document.activeElement) {
-      // Give the autocomplete a moment to handle the selection
-      setTimeout(() => {
-        const place = placeAutocompleteRef.current?.getPlace?.()
-        if (!place) {
-          // No suggestion selected, do manual search
-          event.preventDefault()
-          void searchTypedAddress()
-        }
-      }, 100)
+    const place = autocompleteRef.current?.getPlace?.()
+    if (!place) {
+      event.preventDefault()
+      void searchTypedAddress()
     }
   }
 
@@ -195,7 +153,6 @@ export const LocationSearch = forwardRef<HTMLInputElement, LocationSearchProps>(
             onKeyDown={handleKeyDown}
             className="[&>gmp-place-autocomplete]:w-full [&_input]:pl-10 [&_input]:h-12 [&_input]:text-base"
           />
-          {/* Fallback input element (hidden but available via ref) */}
           <input ref={inputRef} type="hidden" value={value} onChange={() => {}} />
         </label>
         <Button
