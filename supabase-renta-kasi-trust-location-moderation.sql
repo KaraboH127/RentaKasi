@@ -35,6 +35,10 @@ begin
     create type public.report_status as enum ('open', 'in_review', 'resolved', 'dismissed');
   end if;
 
+  if not exists (select 1 from pg_type where typname = 'tenant_identity_status') then
+    create type public.tenant_identity_status as enum ('phone_captured', 'otp_pending', 'otp_verified', 'blocked');
+  end if;
+
   if not exists (select 1 from pg_type where typname = 'verification_check_type') then
     create type public.verification_check_type as enum ('phone', 'identity', 'property', 'manual', 'ai_moderation');
   end if;
@@ -78,6 +82,11 @@ alter type public.report_status add value if not exists 'open';
 alter type public.report_status add value if not exists 'in_review';
 alter type public.report_status add value if not exists 'resolved';
 alter type public.report_status add value if not exists 'dismissed';
+
+alter type public.tenant_identity_status add value if not exists 'phone_captured';
+alter type public.tenant_identity_status add value if not exists 'otp_pending';
+alter type public.tenant_identity_status add value if not exists 'otp_verified';
+alter type public.tenant_identity_status add value if not exists 'blocked';
 
 alter type public.verification_check_type add value if not exists 'phone';
 alter type public.verification_check_type add value if not exists 'identity';
@@ -123,9 +132,37 @@ alter table public.listings
   add column if not exists hidden_reason text,
   add column if not exists moderation_review_required boolean not null default false;
 
+create table if not exists public.tenant_identities (
+  id uuid primary key default gen_random_uuid(),
+  phone_e164 text not null,
+  phone_display text not null,
+  verification_status public.tenant_identity_status not null default 'phone_captured',
+  verification_method text not null default 'phone_self_attested',
+  verification_token_hash text not null,
+  otp_provider text,
+  otp_reference text,
+  otp_verified_at timestamptz,
+  report_count integer not null default 0 check (report_count >= 0),
+  last_reported_at timestamptz,
+  last_seen_at timestamptz not null default now(),
+  blocked_at timestamptz,
+  blocked_reason text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint tenant_identities_phone_e164_format check (phone_e164 ~ '^\+27[6-8][0-9]{8}$'),
+  constraint tenant_identities_token_hash_format check (verification_token_hash ~ '^[a-f0-9]{64}$'),
+  constraint tenant_identities_blocked_consistency check (
+    (verification_status = 'blocked' and blocked_at is not null)
+    or
+    (verification_status <> 'blocked')
+  )
+);
+
 create table if not exists public.landlord_reports (
   id uuid primary key default gen_random_uuid(),
-  reporter_id uuid not null references auth.users(id) on delete cascade,
+  reporter_id uuid references auth.users(id) on delete cascade,
+  reporter_tenant_identity_id uuid references public.tenant_identities(id) on delete set null,
   target_type public.report_target_type not null,
   landlord_id uuid references public.profiles(id) on delete set null,
   listing_id uuid references public.listings(id) on delete set null,
@@ -142,9 +179,26 @@ create table if not exists public.landlord_reports (
     or
     (target_type = 'listing' and listing_id is not null)
   ),
+  constraint landlord_reports_reporter_required check (
+    reporter_id is not null or reporter_tenant_identity_id is not null
+  ),
   constraint landlord_reports_details_length check (details is null or char_length(details) <= 2000),
-  constraint landlord_reports_not_self check (landlord_id is null or reporter_id <> landlord_id)
+  constraint landlord_reports_not_self check (reporter_id is null or landlord_id is null or reporter_id <> landlord_id)
 );
+
+alter table public.landlord_reports
+  alter column reporter_id drop not null,
+  add column if not exists reporter_tenant_identity_id uuid references public.tenant_identities(id) on delete set null;
+
+alter table public.landlord_reports
+  drop constraint if exists landlord_reports_not_self,
+  add constraint landlord_reports_not_self
+    check (reporter_id is null or landlord_id is null or reporter_id <> landlord_id);
+
+alter table public.landlord_reports
+  drop constraint if exists landlord_reports_reporter_required,
+  add constraint landlord_reports_reporter_required
+    check (reporter_id is not null or reporter_tenant_identity_id is not null);
 
 create table if not exists public.landlord_verifications (
   id uuid primary key default gen_random_uuid(),
@@ -185,15 +239,25 @@ create index if not exists idx_profiles_trust_risk_scores on public.profiles(tru
 create index if not exists idx_profiles_hidden_at on public.profiles(hidden_at);
 create index if not exists idx_listings_public_visibility on public.listings(available, hidden_at, moderation_review_required, expires_at);
 create index if not exists idx_listings_user_visibility on public.listings(user_id, available, hidden_at);
+create unique index if not exists uq_tenant_identities_phone_e164 on public.tenant_identities(phone_e164);
+create unique index if not exists uq_tenant_identities_token_hash on public.tenant_identities(verification_token_hash);
+create index if not exists idx_tenant_identities_status_seen on public.tenant_identities(verification_status, last_seen_at desc);
 create index if not exists idx_landlord_reports_landlord_status on public.landlord_reports(landlord_id, status, created_at desc);
 create index if not exists idx_landlord_reports_listing_status on public.landlord_reports(listing_id, status, created_at desc);
 create index if not exists idx_landlord_reports_reporter on public.landlord_reports(reporter_id, created_at desc);
+create index if not exists idx_landlord_reports_tenant_identity on public.landlord_reports(reporter_tenant_identity_id, created_at desc);
 create unique index if not exists uq_landlord_reports_unique_landlord_reporter
   on public.landlord_reports(reporter_id, landlord_id)
   where target_type = 'landlord' and landlord_id is not null;
 create unique index if not exists uq_landlord_reports_unique_listing_reporter
   on public.landlord_reports(reporter_id, listing_id)
   where target_type = 'listing' and listing_id is not null;
+create unique index if not exists uq_landlord_reports_unique_landlord_tenant_identity
+  on public.landlord_reports(reporter_tenant_identity_id, landlord_id)
+  where target_type = 'landlord' and landlord_id is not null and reporter_tenant_identity_id is not null;
+create unique index if not exists uq_landlord_reports_unique_listing_tenant_identity
+  on public.landlord_reports(reporter_tenant_identity_id, listing_id)
+  where target_type = 'listing' and listing_id is not null and reporter_tenant_identity_id is not null;
 create index if not exists idx_landlord_verifications_landlord_type on public.landlord_verifications(landlord_id, check_type, status);
 create index if not exists idx_moderation_actions_landlord_created on public.moderation_actions(landlord_id, created_at desc);
 create index if not exists idx_moderation_actions_report_created on public.moderation_actions(report_id, created_at desc);
@@ -217,6 +281,11 @@ begin
 end;
 $$;
 
+drop trigger if exists touch_tenant_identities_updated_at on public.tenant_identities;
+create trigger touch_tenant_identities_updated_at
+before update on public.tenant_identities
+for each row execute function public.touch_updated_at();
+
 drop trigger if exists touch_landlord_reports_updated_at on public.landlord_reports;
 create trigger touch_landlord_reports_updated_at
 before update on public.landlord_reports
@@ -226,6 +295,140 @@ drop trigger if exists touch_landlord_verifications_updated_at on public.landlor
 create trigger touch_landlord_verifications_updated_at
 before update on public.landlord_verifications
 for each row execute function public.touch_updated_at();
+
+create or replace function public.create_or_get_tenant_identity(
+  phone_e164_input text,
+  phone_display_input text,
+  verification_token_hash_input text
+)
+returns table (
+  id uuid,
+  phone_display text,
+  phone_e164 text,
+  verification_status public.tenant_identity_status,
+  otp_verified_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if phone_e164_input is null or phone_e164_input !~ '^\+27[6-8][0-9]{8}$' then
+    raise exception 'Enter a valid South African mobile number.';
+  end if;
+
+  if verification_token_hash_input is null or verification_token_hash_input !~ '^[a-f0-9]{64}$' then
+    raise exception 'Invalid verification session.';
+  end if;
+
+  return query
+  insert into public.tenant_identities (
+    phone_e164,
+    phone_display,
+    verification_token_hash,
+    verification_status,
+    verification_method,
+    last_seen_at
+  )
+  values (
+    phone_e164_input,
+    phone_display_input,
+    verification_token_hash_input,
+    'phone_captured',
+    'phone_self_attested',
+    now()
+  )
+  on conflict (phone_e164) do update
+  set phone_display = excluded.phone_display,
+      verification_token_hash = excluded.verification_token_hash,
+      last_seen_at = now(),
+      updated_at = now()
+  returning
+    tenant_identities.id,
+    tenant_identities.phone_display,
+    tenant_identities.phone_e164,
+    tenant_identities.verification_status,
+    tenant_identities.otp_verified_at;
+end;
+$$;
+
+create or replace function public.create_tenant_report(
+  verification_token_hash_input text,
+  target_type_input public.report_target_type,
+  listing_id_input uuid default null,
+  landlord_id_input uuid default null,
+  category_input public.report_category default 'other',
+  details_input text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  tenant_identity_id uuid;
+  new_report_id uuid;
+  recent_hour_count integer;
+  recent_day_count integer;
+begin
+  if verification_token_hash_input is null or verification_token_hash_input !~ '^[a-f0-9]{64}$' then
+    raise exception 'Please verify your phone number before submitting a report.';
+  end if;
+
+  select id
+  into tenant_identity_id
+  from public.tenant_identities
+  where verification_token_hash = verification_token_hash_input
+    and verification_status in ('phone_captured', 'otp_pending', 'otp_verified')
+    and blocked_at is null;
+
+  if tenant_identity_id is null then
+    raise exception 'Please verify your phone number before submitting a report.';
+  end if;
+
+  select count(*)
+  into recent_hour_count
+  from public.landlord_reports
+  where reporter_tenant_identity_id = tenant_identity_id
+    and created_at > now() - interval '1 hour';
+
+  select count(*)
+  into recent_day_count
+  from public.landlord_reports
+  where reporter_tenant_identity_id = tenant_identity_id
+    and created_at > now() - interval '1 day';
+
+  if recent_hour_count >= 5 or recent_day_count >= 20 then
+    raise exception 'Too many reports from this phone number. Please try again later.';
+  end if;
+
+  insert into public.landlord_reports (
+    reporter_tenant_identity_id,
+    target_type,
+    listing_id,
+    landlord_id,
+    category,
+    details
+  )
+  values (
+    tenant_identity_id,
+    target_type_input,
+    listing_id_input,
+    landlord_id_input,
+    category_input,
+    nullif(trim(details_input), '')
+  )
+  returning id into new_report_id;
+
+  update public.tenant_identities
+  set report_count = report_count + 1,
+      last_reported_at = now(),
+      last_seen_at = now()
+  where id = tenant_identity_id;
+
+  return new_report_id;
+end;
+$$;
 
 create or replace function public.prevent_landlord_trust_tampering()
 returns trigger
@@ -353,11 +556,12 @@ begin
     return;
   end if;
 
-  select count(distinct reporter_id)
+  select count(distinct coalesce(reporter_tenant_identity_id::text, reporter_id::text))
   into unique_report_count
   from public.landlord_reports
   where landlord_id = target_landlord_id
-    and status in ('open', 'in_review');
+    and status in ('open', 'in_review')
+    and (reporter_tenant_identity_id is not null or reporter_id is not null);
 
   select count(*)
   into active_listing_count
@@ -547,16 +751,28 @@ begin
 end;
 $$;
 
+alter table public.tenant_identities enable row level security;
 alter table public.landlord_reports enable row level security;
 alter table public.landlord_verifications enable row level security;
 alter table public.moderation_actions enable row level security;
 
+revoke all on public.tenant_identities from anon, authenticated;
+grant execute on function public.create_or_get_tenant_identity(text, text, text) to anon, authenticated;
+grant execute on function public.create_tenant_report(text, public.report_target_type, uuid, uuid, public.report_category, text) to anon, authenticated;
+
 do $$
 begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'tenant_identities' and policyname = 'Admins manage tenant identities') then
+    create policy "Admins manage tenant identities"
+      on public.tenant_identities for all
+      using (public.is_admin())
+      with check (public.is_admin());
+  end if;
+
   if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'landlord_reports' and policyname = 'Users can create their own reports') then
     create policy "Users can create their own reports"
       on public.landlord_reports for insert
-      with check (auth.uid() = reporter_id);
+      with check (auth.uid() = reporter_id and reporter_tenant_identity_id is null);
   end if;
 
   if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'landlord_reports' and policyname = 'Users can read their own reports') then

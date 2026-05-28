@@ -1,6 +1,7 @@
 export interface PhoneFormatResult {
   display: string
   e164: string
+  digits: string
   whatsapp: string
   isValid: boolean
   reason?: string
@@ -13,7 +14,7 @@ export function normalizeSouthAfricanPhone(input?: string | null): PhoneFormatRe
   const digits = raw.replace(/[^\d]/g, '')
 
   if (!raw || !digits) {
-    return { display: raw, e164: '', whatsapp: '', isValid: false, reason: 'missing' }
+    return { display: raw, e164: '', digits: '', whatsapp: '', isValid: false, reason: 'missing' }
   }
 
   let normalized = digits
@@ -38,6 +39,7 @@ export function normalizeSouthAfricanPhone(input?: string | null): PhoneFormatRe
   return {
     display,
     e164,
+    digits: isValid ? normalized : digits,
     whatsapp,
     isValid,
     reason: isValid ? undefined : 'invalid_sa_mobile',
