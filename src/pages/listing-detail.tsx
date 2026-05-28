@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MapSkeleton, ProfileSkeleton } from '@/components/skeletons'
 import { ListingMap } from '@/components/ListingMap'
+import { DetailMap } from '@/components/DetailMap'
 import { ReportDialog } from '@/components/ReportDialog'
 import { TrustBadges } from '@/components/TrustBadges'
 import { getListingById, type Listing } from '@/lib/listings'
@@ -93,7 +94,7 @@ export default function ListingDetail() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-5 sm:py-10 max-w-5xl">
+      <div className="container mx-auto px-4 py-5 sm:py-10 max-w-5xl pb-32 md:pb-0">
         <div className="grid md:grid-cols-5 gap-6 lg:gap-16">
           <div className="md:col-span-3">
             <div className="rounded-2xl overflow-hidden bg-muted aspect-[4/3] mb-2 sm:mb-4 shadow-sm ring-1 ring-border/60">
@@ -155,7 +156,11 @@ export default function ListingDetail() {
                 {listing.taxiRouteProximity && <p className="text-muted-foreground">Taxi route: {listing.taxiRouteProximity}</p>}
                 {listing.transportInfo && <p className="text-muted-foreground">Transport: {listing.transportInfo}</p>}
               </div>
-              <ListingMap listings={[listing]} compact className="mt-4" />
+              {listing.latitude !== null && listing.longitude !== null ? (
+                <DetailMap listing={listing} className="mt-4" />
+              ) : (
+                <ListingMap listings={[listing]} compact className="mt-4" />
+              )}
             </div>
 
             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 sm:p-5 mb-4 sm:mb-5">
@@ -198,14 +203,6 @@ export default function ListingDetail() {
               </Button>
             </a>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {listing.latitude !== null && listing.longitude !== null && (
-                <a href={`https://www.openstreetmap.org/?mlat=${listing.latitude}&mlon=${listing.longitude}#map=17/${listing.latitude}/${listing.longitude}`} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="w-full gap-2">
-                    <Navigation className="h-4 w-4" />
-                    Open map
-                  </Button>
-                </a>
-              )}
               <ReportDialog targetType="listing" listingId={listing.id} landlordId={listing.userId} title="Report this listing">
                 <Button variant="outline" className="w-full gap-2 text-destructive hover:text-destructive">
                   <Flag className="h-4 w-4" />

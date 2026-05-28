@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ListingCard } from '@/components/ListingCard'
 import { ListingMap } from '@/components/ListingMap'
+import { ListingsMap } from '@/components/ListingsMapGoogleMaps'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -31,6 +32,8 @@ export default function Listings() {
   const [listings, setListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingSearch, setIsSavingSearch] = useState(false)
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null)
+  const [useGoogleMap, setUseGoogleMap] = useState(true)
 
   useEffect(() => {
     setSearch(searchParams.get('search') || '')
@@ -220,7 +223,7 @@ export default function Listings() {
           </Badge>
         </div>
 
-        {mapOpen && (isLoading ? <MapSkeleton className="mb-5 sm:mb-8" /> : <ListingMap listings={listings} className="mb-5 sm:mb-8" />)}
+        {mapOpen && (isLoading ? <MapSkeleton className="mb-5 sm:mb-8" /> : useGoogleMap ? <ListingsMap listings={listings} selectedListingId={selectedListingId} onListingClick={setSelectedListingId} className="mb-5 sm:mb-8" /> : <ListingMap listings={listings} className="mb-5 sm:mb-8" />)}
 
         {isLoading ? (
           <PropertyCardSkeletonGrid />
