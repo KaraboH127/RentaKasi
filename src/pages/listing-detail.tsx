@@ -8,6 +8,7 @@ import { DetailMap } from '@/components/DetailMap'
 import { ReportDialog } from '@/components/ReportDialog'
 import { TrustBadges } from '@/components/TrustBadges'
 import { getListingById, type Listing } from '@/lib/listings'
+import { normalizeSouthAfricanPhone } from '@/lib/phone'
 import { getRoomTypeLabel } from '@/lib/rental-options'
 import { MapPin, Phone, ArrowLeft, Home, Calendar, Flag, ShieldCheck, Navigation } from 'lucide-react'
 
@@ -77,10 +78,9 @@ export default function ListingDetail() {
 
   const images = listing.images.length > 0 ? listing.images : ['https://placehold.co/800x600/e3ddd8/1f242d?text=No+Image']
   const contactName = listing.landlordName || 'there'
-  const phone = listing.landlordPhone || ''
+  const phone = normalizeSouthAfricanPhone(listing.landlordPhone)
   const whatsappMessage = encodeURIComponent(`Hi ${contactName}, I am interested in the room you listed on RentaKasi: "${listing.title}" in ${listing.location} for R${listing.price}/month. Is it still available?`)
-  const cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '')
-  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${whatsappMessage}` : '#'
+  const whatsappUrl = phone.isValid ? `https://wa.me/${phone.whatsapp}?text=${whatsappMessage}` : '#'
   const formattedDate = new Date(listing.createdAt).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
@@ -173,7 +173,7 @@ export default function ListingDetail() {
                   <p className="font-semibold text-foreground text-sm sm:text-base" data-testid="text-landlord-name">{contactName}</p>
                   <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
                     <Phone className="w-3 h-3" />
-                    {phone || 'Phone available after landlord updates profile'}
+                    {phone.isValid ? phone.display : 'Phone available after landlord updates profile'}
                   </p>
                 </div>
               </div>
@@ -196,8 +196,8 @@ export default function ListingDetail() {
               </div>
             </div>
 
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" data-testid="button-contact-whatsapp" className="hidden md:block pointer-events-auto" aria-disabled={!cleanPhone}>
-              <Button size="lg" className="w-full h-14 text-base font-semibold gap-2 rounded-xl touch-manipulation" disabled={!cleanPhone}>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" data-testid="button-contact-whatsapp" className="hidden md:block pointer-events-auto" aria-disabled={!phone.isValid}>
+              <Button size="lg" className="w-full h-14 text-base font-semibold gap-2 rounded-xl touch-manipulation" disabled={!phone.isValid}>
                 <WhatsAppIcon />
                 Contact via WhatsApp
               </Button>
@@ -221,8 +221,8 @@ export default function ListingDetail() {
       </div>
 
       <div className="md:hidden fixed bottom-16 inset-x-0 px-4 py-3 bg-card/95 backdrop-blur-sm border-t border-border z-40">
-        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" data-testid="button-contact-whatsapp-mobile" aria-disabled={!cleanPhone}>
-          <Button size="lg" className="w-full h-12 text-base font-semibold gap-2 rounded-xl touch-manipulation" disabled={!cleanPhone}>
+        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" data-testid="button-contact-whatsapp-mobile" aria-disabled={!phone.isValid}>
+          <Button size="lg" className="w-full h-12 text-base font-semibold gap-2 rounded-xl touch-manipulation" disabled={!phone.isValid}>
             <WhatsAppIcon />
             Contact on WhatsApp
           </Button>

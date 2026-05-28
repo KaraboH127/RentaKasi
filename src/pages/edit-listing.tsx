@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { getListingById, updateListing, type Listing } from '@/lib/listings'
 import { LOCATIONS, ROOM_TYPES } from '@/lib/rental-options'
+import { isValidSouthAfricanPhone } from '@/lib/phone'
 import { PhotoUpload } from '@/components/PhotoUpload'
 import { LocationPicker } from '@/components/LocationPicker'
 import { ArrowLeft, Home, MapPin, Phone, ShieldCheck } from 'lucide-react'
@@ -34,7 +35,7 @@ const editListingSchema = z.object({
   images: z.array(z.string()).default([]),
   outsidePhoto: z.array(z.string()).min(1, 'Outside property photo is required'),
   streetPhoto: z.array(z.string()).default([]),
-  landlordPhone: z.string().min(10, 'Please enter a valid phone number'),
+  landlordPhone: z.string().min(10, 'Please enter a valid phone number').refine(isValidSouthAfricanPhone, 'Enter a valid South African mobile number'),
 }).superRefine((data, ctx) => {
   if (data.latitude === null || data.longitude === null) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Map pin is required', path: ['latitude'] })
@@ -79,7 +80,7 @@ export default function EditListing() {
   useEffect(() => {
     if (!id) return
     setIsLoading(true)
-    getListingById(id)
+    getListingById(id, { includeModerated: true })
       .then((data) => {
         setListing(data)
         setIsError(false)

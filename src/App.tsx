@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { ScrollToTop } from '@/components/ScrollToTop'
 
 import Home from '@/pages/home'
 import Listings from '@/pages/listings'
@@ -16,6 +17,7 @@ import Login from '@/pages/login'
 import Register from '@/pages/register'
 import About from '@/pages/about'
 import Terms from '@/pages/terms'
+import Privacy from '@/pages/privacy'
 import NotFound from '@/pages/not-found'
 
 function App() {
@@ -23,6 +25,7 @@ function App() {
     <TooltipProvider>
       <AuthProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <div className="min-h-[100dvh] flex flex-col">
             <Navbar />
             <main className="flex-grow flex flex-col pb-16 md:pb-0">
@@ -37,6 +40,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

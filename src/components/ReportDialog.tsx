@@ -32,7 +32,12 @@ export function ReportDialog({ children, targetType, listingId, landlordId, titl
     setIsSubmitting(true)
     try {
       await createReport(user.id, { targetType, listingId, landlordId, reason, details })
-      toast({ title: 'Report submitted', description: 'Thank you. The RentaKasi team will review this concern.' })
+      toast({
+        title: 'Report submitted',
+        description: targetType === 'landlord'
+          ? 'Thank you. If this landlord has repeated unique reports, their listings will be hidden for review.'
+          : 'Thank you. The RentaKasi team will review this concern.',
+      })
       setDetails('')
       setReason('scam')
     } catch (error) {

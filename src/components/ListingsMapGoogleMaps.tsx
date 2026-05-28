@@ -12,16 +12,15 @@
  * - Mobile-first responsive
  */
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { MapPin, LocateFixed, Plus, Minus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { MapSkeletonLoader } from '@/components/MapSkeletonLoader'
 import { useGoogleMaps } from '@/hooks/use-google-maps'
 import { useMapContainer } from '@/hooks/use-map-container'
-import { useMarkerClusterer } from '@/hooks/use-marker-clusterer'
 import { useMapSynchronizer } from '@/hooks/use-map-synchronizer'
-import { getDefaultMapCenter, reverseGeocodeGoogle, type MapCoordinates } from '@/lib/location-engine'
+import { getDefaultMapCenter } from '@/lib/location-engine'
 import { readLastLocation } from '@/lib/location'
+import { getTownshipByName } from '@/lib/rental-options'
 import { cn } from '@/lib/utils'
 import type { Listing } from '@/lib/listings'
 
@@ -30,8 +29,17 @@ interface ListingsMapProps {
   selectedListingId?: string | null
   onListingHover?: (id: string | null) => void
   onListingClick?: (id: string) => void
+  onTownshipClick?: (township: string) => void
   className?: string
   compact?: boolean
+}
+
+interface TownshipMapPin {
+  township: string
+  count: number
+  latitude: number
+  longitude: number
+  listings: Listing[]
 }
 
 export function ListingsMap({
@@ -39,10 +47,12 @@ export function ListingsMap({
   selectedListingId = null,
   onListingHover,
   onListingClick,
+  onTownshipClick,
   className,
   compact = false,
 }: ListingsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const townshipMarkersRef = useRef<any[]>([])
   const { googleMaps, isReady } = useGoogleMaps()
   const [isLoading, setIsLoading] = useState(!isReady)
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +66,28 @@ export function ListingsMap({
 
   // Filter listings with coordinates
   const mappedListings = useMemo(() => listings.filter((l) => l.latitude !== null && l.longitude !== null), [listings])
+  const townshipPins = useMemo<TownshipMapPin[]>(() => {
+    const grouped = new Map<string, Listing[]>()
+
+    for (const listing of listings) {
+      const key = listing.location.trim()
+      if (!key) continue
+      grouped.set(key, [...(grouped.get(key) ?? []), listing])
+    }
+
+    return Array.from(grouped.entries()).map(([township, townshipListings]) => {
+      const knownTownship = getTownshipByName(township)
+      const listingsWithCoords = townshipListings.filter((listing) => listing.latitude !== null && listing.longitude !== null)
+      const latitude = knownTownship?.latitude ?? (
+        listingsWithCoords.reduce((sum, listing) => sum + Number(listing.latitude), 0) / Math.max(listingsWithCoords.length, 1)
+      )
+      const longitude = knownTownship?.longitude ?? (
+        listingsWithCoords.reduce((sum, listing) => sum + Number(listing.longitude), 0) / Math.max(listingsWithCoords.length, 1)
+      )
+
+      return { township, count: townshipListings.length, latitude, longitude, listings: townshipListings }
+    }).filter((pin) => Number.isFinite(pin.latitude) && Number.isFinite(pin.longitude))
+  }, [listings])
 
   // Initialize map container
   const { mapRef, isReady: mapReady } = useMapContainer(containerRef as React.RefObject<HTMLDivElement>, {
@@ -65,13 +97,6 @@ export function ListingsMap({
     disableStreetView: false,
     disableMapType: false,
     clickableIcons: false,
-  })
-
-  // Initialize marker clusterer
-  const { highlightMarker, removeHighlight } = useMarkerClusterer(mapRef, mappedListings, {
-    onMarkerClick: (listing) => {
-      onListingClick?.(listing.id)
-    },
   })
 
   // Initialize map synchronizer
@@ -84,16 +109,14 @@ export function ListingsMap({
 
   // Auto-fit bounds when listings change
   useEffect(() => {
-    if (!mapReady || !mapRef.current || mappedListings.length === 0) return
+    if (!mapReady || !mapRef.current || townshipPins.length === 0) return
 
     try {
       const google = googleMaps
       const bounds = new google.maps.LatLngBounds()
 
-      for (const listing of mappedListings) {
-        if (listing.latitude !== null && listing.longitude !== null) {
-          bounds.extend({ lat: listing.latitude, lng: listing.longitude })
-        }
+      for (const pin of townshipPins) {
+        bounds.extend({ lat: pin.latitude, lng: pin.longitude })
       }
 
       mapRef.current.fitBounds(bounds, {
@@ -105,7 +128,50 @@ export function ListingsMap({
     } catch (err) {
       console.error('[ListingsMap] Failed to fit bounds:', err)
     }
-  }, [mappedListings, mapReady, mapRef, googleMaps])
+  }, [townshipPins, mapReady, mapRef, googleMaps])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !googleMaps) return
+
+    for (const marker of townshipMarkersRef.current) {
+      marker.map = null
+    }
+    townshipMarkersRef.current = []
+
+    townshipMarkersRef.current = townshipPins.map((pin) => {
+      const content = document.createElement('button')
+      content.type = 'button'
+      content.className = 'rk-focus rounded-full border-2 border-white bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-lg shadow-black/20 transition-transform hover:scale-105'
+      content.setAttribute('aria-label', `${pin.count} listings in ${pin.township}`)
+      content.innerHTML = `<span class="block leading-none">${pin.count}</span><span class="block whitespace-nowrap text-[10px] font-semibold leading-tight">${pin.township}</span>`
+      content.addEventListener('click', () => onTownshipClick?.(pin.township))
+
+      if (googleMaps.maps.marker?.AdvancedMarkerElement) {
+        return new googleMaps.maps.marker.AdvancedMarkerElement({
+          content,
+          map: mapRef.current,
+          position: { lat: pin.latitude, lng: pin.longitude },
+          title: `${pin.township}: ${pin.count} listings`,
+        })
+      }
+
+      const marker = new googleMaps.maps.Marker({
+        label: String(pin.count),
+        map: mapRef.current,
+        position: { lat: pin.latitude, lng: pin.longitude },
+        title: `${pin.township}: ${pin.count} listings`,
+      })
+      marker.addListener('click', () => onTownshipClick?.(pin.township))
+      return marker
+    })
+
+    return () => {
+      for (const marker of townshipMarkersRef.current) {
+        marker.map = null
+      }
+      townshipMarkersRef.current = []
+    }
+  }, [googleMaps, mapReady, mapRef, onTownshipClick, townshipPins])
 
   // Handle selected listing - pan and highlight marker
   useEffect(() => {
@@ -115,12 +181,7 @@ export function ListingsMap({
     if (!listing) return
 
     panToListing(listing)
-    highlightMarker(selectedListingId)
-
-    return () => {
-      removeHighlight(selectedListingId)
-    }
-  }, [selectedListingId, mapReady, mappedListings, panToListing, highlightMarker, removeHighlight])
+  }, [selectedListingId, mapReady, mappedListings, panToListing])
 
   // Track zoom level
   useEffect(() => {
@@ -141,13 +202,13 @@ export function ListingsMap({
   }, [isReady])
 
   // Handle no listings
-  if (mappedListings.length === 0) {
+  if (townshipPins.length === 0) {
     return (
       <div className={cn('rounded-2xl border bg-muted/50 p-5 text-center', className)}>
         <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-card text-muted-foreground">
           <MapPin className="h-5 w-5" />
         </div>
-        <p className="font-display font-semibold">No rooms to show on map</p>
+        <p className="font-display font-semibold">No township counts to show</p>
         <p className="mt-1 text-sm text-muted-foreground">Try adjusting your filters or searching for a different area.</p>
       </div>
     )
@@ -166,7 +227,7 @@ export function ListingsMap({
 
         {/* Overlay: Listing count */}
         <div className="absolute left-4 top-4 rounded-full bg-card/95 px-3 py-1.5 text-xs font-semibold shadow-sm backdrop-blur">
-          {mappedListings.length} pinned {mappedListings.length === 1 ? 'room' : 'rooms'}
+          {townshipPins.length} {townshipPins.length === 1 ? 'township' : 'townships'} shown
         </div>
 
         {/* Overlay: Zoom controls (only on non-compact) */}
@@ -198,10 +259,8 @@ export function ListingsMap({
               onClick={() => {
                 if (mapRef.current) {
                   const bounds = new googleMaps.maps.LatLngBounds()
-                  for (const listing of mappedListings) {
-                    if (listing.latitude !== null && listing.longitude !== null) {
-                      bounds.extend({ lat: listing.latitude, lng: listing.longitude })
-                    }
+                  for (const pin of townshipPins) {
+                    bounds.extend({ lat: pin.latitude, lng: pin.longitude })
                   }
                   mapRef.current.fitBounds(bounds)
                 }

@@ -30,6 +30,7 @@ export function Footer() {
             <ul className="space-y-2">
               <li><Link to="/about" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
               <li><Link to="/terms" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
+              <li><Link to="/privacy" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
               {/*<li><Link to="/terms#safety" className="rk-focus inline-flex rounded-md text-sm text-muted-foreground hover:text-primary transition-colors">Help & safety</Link></li>*/}
             </ul>
           </div>

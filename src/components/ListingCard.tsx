@@ -15,7 +15,7 @@ interface ListingCardProps {
 export function ListingCard({ listing, featured = false }: ListingCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const primaryImage = listing.images?.[0] || listing.outsidePhotoUrl || 'https://placehold.co/600x400/e3ddd8/1f242d?text=No+Image'
-  const isTrusted = listing.landlordVerified || listing.verificationStatus === 'verified'
+  const isTrusted = listing.landlordTrustStatus === 'verified' || listing.verificationStatus === 'verified'
 
   return (
     <Link to={`/listing/${listing.id}`} className="group block rounded-2xl touch-manipulation rk-focus">
@@ -66,7 +66,7 @@ export function ListingCard({ listing, featured = false }: ListingCardProps) {
 
           <div className="mb-2 flex flex-wrap gap-1.5">
             <Badge variant="outline" className="px-1.5 py-0.5 text-[10px] font-medium">{getRoomTypeLabel(listing.roomType)}</Badge>
-            <TrustBadges listing={listing} />
+            <TrustBadges listing={listing} compact />
           </div>
 
           <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-1 hidden sm:block flex-grow">

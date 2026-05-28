@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { createListing } from '@/lib/listings'
 import { LOCATIONS, ROOM_TYPES } from '@/lib/rental-options'
+import { isValidSouthAfricanPhone } from '@/lib/phone'
 import { PhotoUpload } from '@/components/PhotoUpload'
 import { LocationPicker } from '@/components/LocationPicker'
 import { ArrowLeft, Home, MapPin, Phone, ShieldCheck } from 'lucide-react'
@@ -33,7 +34,7 @@ const createListingSchema = z.object({
   images: z.array(z.string()).default([]),
   outsidePhoto: z.array(z.string()).min(1, 'Outside property photo is required'),
   streetPhoto: z.array(z.string()).default([]),
-  landlordPhone: z.string().min(10, 'Please enter a valid phone number'),
+  landlordPhone: z.string().min(10, 'Please enter a valid phone number').refine(isValidSouthAfricanPhone, 'Enter a valid South African mobile number'),
 }).superRefine((data, ctx) => {
   if (data.latitude === null || data.longitude === null) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Map pin is required', path: ['latitude'] })
@@ -93,6 +94,19 @@ export default function CreateListing() {
         <h2 className="font-display text-2xl font-bold mb-3">Landlords Only</h2>
         <p className="text-muted-foreground mb-6">Only landlord accounts can create listings. Register as a landlord to get started.</p>
         <Link to="/register"><Button>Register as Landlord</Button></Link>
+      </div>
+    )
+  }
+
+  if (user.landlordTrustStatus === 'suspended' || user.landlordTrustStatus === 'banned' || user.hiddenAt) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center max-w-md">
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+          <ShieldCheck className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h2 className="font-display text-2xl font-bold mb-3">Listings Paused</h2>
+        <p className="text-muted-foreground mb-6">Your landlord account is under moderation review, so new listings are currently disabled.</p>
+        <Link to="/dashboard"><Button>Back to Dashboard</Button></Link>
       </div>
     )
   }

@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { getListings, type Listing } from '@/lib/listings'
 import { createSavedSearch } from '@/lib/saved-searches'
-import { LOCATIONS, ROOM_TYPES, type RoomType } from '@/lib/rental-options'
+import { getTownshipsByProvince, PROVINCES, ROOM_TYPES, type RoomType } from '@/lib/rental-options'
 import { cn } from '@/lib/utils'
 import { BellPlus, Map, Search, X, SlidersHorizontal } from 'lucide-react'
 
@@ -24,6 +24,7 @@ export default function Listings() {
   const { toast } = useToast()
 
   const [search, setSearch] = useState(searchParams.get('search') || '')
+  const [selectedProvince, setSelectedProvince] = useState<string>(searchParams.get('province') || '')
   const [selectedLocation, setSelectedLocation] = useState<string>(searchParams.get('location') || '')
   const [maxPrice, setMaxPrice] = useState<string>(searchParams.get('maxPrice') || '')
   const [roomType, setRoomType] = useState<string>(searchParams.get('roomType') || '')
@@ -37,6 +38,7 @@ export default function Listings() {
 
   useEffect(() => {
     setSearch(searchParams.get('search') || '')
+    setSelectedProvince(searchParams.get('province') || '')
     setSelectedLocation(searchParams.get('location') || '')
     setMaxPrice(searchParams.get('maxPrice') || '')
     setRoomType(searchParams.get('roomType') || '')
@@ -46,6 +48,7 @@ export default function Listings() {
     setIsLoading(true)
     getListings({
       search: searchParams.get('search') || undefined,
+      province: searchParams.get('province') || undefined,
       location: searchParams.get('location') || undefined,
       maxPrice: searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined,
       roomType: (searchParams.get('roomType') || undefined) as RoomType | undefined,
@@ -58,6 +61,7 @@ export default function Listings() {
     if (e) e.preventDefault()
     const params = new URLSearchParams()
     if (search.trim()) params.set('search', search.trim())
+    if (selectedProvince && selectedProvince !== 'all') params.set('province', selectedProvince)
     if (selectedLocation && selectedLocation !== 'all') params.set('location', selectedLocation)
     if (maxPrice) params.set('maxPrice', maxPrice)
     if (roomType && roomType !== 'all') params.set('roomType', roomType)
@@ -68,6 +72,7 @@ export default function Listings() {
 
   const clearFilters = () => {
     setSearch('')
+    setSelectedProvince('all')
     setSelectedLocation('all')
     setMaxPrice('')
     setRoomType('')
@@ -97,7 +102,8 @@ export default function Listings() {
     }
   }
 
-  const activeFilterCount = (selectedLocation && selectedLocation !== 'all' ? 1 : 0) + (maxPrice ? 1 : 0) + (roomType && roomType !== 'all' ? 1 : 0)
+  const visibleTownships = getTownshipsByProvince(selectedProvince)
+  const activeFilterCount = (selectedProvince && selectedProvince !== 'all' ? 1 : 0) + (selectedLocation && selectedLocation !== 'all' ? 1 : 0) + (maxPrice ? 1 : 0) + (roomType && roomType !== 'all' ? 1 : 0)
 
   return (
     <div className="flex flex-col flex-grow bg-muted/20">
@@ -152,13 +158,26 @@ export default function Listings() {
 
             {filtersOpen && (
               <div className="flex flex-col gap-2 pt-3 pb-1 border-t border-border/50 mt-1 animate-in fade-in-0 slide-in-from-top-1 duration-150 sm:flex-row">
-                <Select value={selectedLocation || 'all'} onValueChange={setSelectedLocation}>
+                <Select value={selectedProvince || 'all'} onValueChange={(value) => {
+                  setSelectedProvince(value)
+                  setSelectedLocation('all')
+                }}>
                   <SelectTrigger className="h-11 sm:h-12 w-full sm:w-48">
-                    <SelectValue placeholder="All Areas" />
+                    <SelectValue placeholder="All provinces" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Areas</SelectItem>
-                    {LOCATIONS.map((loc) => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                    <SelectItem value="all">All provinces</SelectItem>
+                    {PROVINCES.map((province) => <SelectItem key={province} value={province}>{province}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedLocation || 'all'} onValueChange={setSelectedLocation}>
+                  <SelectTrigger className="h-11 sm:h-12 w-full sm:w-48">
+                    <SelectValue placeholder="All townships" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All townships</SelectItem>
+                    {visibleTownships.map((township) => <SelectItem key={township.name} value={township.name}>{township.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
 
@@ -223,7 +242,15 @@ export default function Listings() {
           </Badge>
         </div>
 
-        {mapOpen && (isLoading ? <MapSkeleton className="mb-5 sm:mb-8" /> : useGoogleMap ? <ListingsMap listings={listings} selectedListingId={selectedListingId} onListingClick={setSelectedListingId} className="mb-5 sm:mb-8" /> : <ListingMap listings={listings} className="mb-5 sm:mb-8" />)}
+        {mapOpen && (isLoading ? <MapSkeleton className="mb-5 sm:mb-8" /> : useGoogleMap ? (
+          <ListingsMap
+            listings={listings}
+            selectedListingId={selectedListingId}
+            onListingClick={setSelectedListingId}
+            onTownshipClick={(township) => navigate(`/listings?location=${encodeURIComponent(township)}`)}
+            className="mb-5 sm:mb-8"
+          />
+        ) : <ListingMap listings={listings} className="mb-5 sm:mb-8" />)}
 
         {isLoading ? (
           <PropertyCardSkeletonGrid />

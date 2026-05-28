@@ -68,13 +68,19 @@ function LandlordDashboard({ userId }: { userId: string }) {
           <h1 className="font-display text-2xl sm:text-3xl font-bold">Welcome, {user?.fullName?.split(' ')[0]}</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage your room listings</p>
         </div>
-        <Link to="/create-listing">
-          <Button className="gap-2 w-full sm:w-auto touch-manipulation" size="lg" data-testid="button-new-listing">
+        <Link to="/create-listing" aria-disabled={user?.hiddenAt ? true : undefined}>
+          <Button className="gap-2 w-full sm:w-auto touch-manipulation" size="lg" data-testid="button-new-listing" disabled={!!user?.hiddenAt || user?.landlordTrustStatus === 'suspended' || user?.landlordTrustStatus === 'banned'}>
             <PlusCircle className="w-5 h-5" />
             List a Room
           </Button>
         </Link>
       </div>
+
+      {(user?.hiddenAt || user?.landlordTrustStatus === 'suspended' || user?.landlordTrustStatus === 'banned') && (
+        <div className="mb-6 rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive">
+          Your public listings are paused because your landlord account has multiple reports and needs moderation review.
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-10" aria-busy={isLoading}>
         {isLoading ? (

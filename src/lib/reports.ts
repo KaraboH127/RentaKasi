@@ -11,7 +11,11 @@ export interface ReportInput {
   details?: string
 }
 
-export async function createReport(reporterId: string, input: ReportInput) {
+export interface ReportResult {
+  enforcementTriggered: boolean
+}
+
+export async function createReport(reporterId: string, input: ReportInput): Promise<ReportResult> {
   const { error } = await supabase.from('reports').insert({
     reporter_id: reporterId,
     target_type: input.targetType,
@@ -21,5 +25,11 @@ export async function createReport(reporterId: string, input: ReportInput) {
     details: input.details?.trim() || null,
   })
 
-  if (error) throw error
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('You have already reported this item. The moderation team can use your existing report.')
+    }
+    throw error
+  }
+  return { enforcementTriggered: input.targetType === 'landlord' }
 }

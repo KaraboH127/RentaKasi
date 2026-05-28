@@ -1,8 +1,10 @@
 import { supabase } from '@/lib/supabase'
-import type { RoomType } from '@/lib/rental-options'
+import { getTownshipsByProvince, type RoomType } from '@/lib/rental-options'
+import { normalizeSouthAfricanPhone } from '@/lib/phone'
 
 export type UserRole = 'tenant' | 'landlord'
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected'
+export type LandlordTrustStatus = 'trust_pending' | 'verified' | 'suspended' | 'banned'
 
 export interface Listing {
   id: string
@@ -31,7 +33,9 @@ export interface Listing {
   streetPhotoUrl: string | null
   landlordName: string
   landlordPhone: string
+  landlordTrustStatus: LandlordTrustStatus
   landlordVerified: boolean
+  landlordHiddenAt: string | null
 }
 
 export interface ListingInput {
@@ -69,6 +73,7 @@ interface ListingRow {
   latitude: number | string | null
   longitude: number | string | null
   room_type: RoomType | null
+  place_id: string | null
   bedrooms: number | null
   bathrooms: number | null
   available: boolean
@@ -79,7 +84,21 @@ interface ListingRow {
   updated_at: string
   outside_photo_url: string | null
   street_photo_url: string | null
-  profiles?: { full_name: string | null; phone: string | null; verified_landlord: boolean | null; verification_status: VerificationStatus | null } | { full_name: string | null; phone: string | null; verified_landlord: boolean | null; verification_status: VerificationStatus | null }[] | null
+  profiles?: {
+    full_name: string | null
+    phone: string | null
+    verified_landlord: boolean | null
+    verification_status: VerificationStatus | null
+    trust_status: LandlordTrustStatus | null
+    hidden_at: string | null
+  } | {
+    full_name: string | null
+    phone: string | null
+    verified_landlord: boolean | null
+    verification_status: VerificationStatus | null
+    trust_status: LandlordTrustStatus | null
+    hidden_at: string | null
+  }[] | null
   listing_images?: { image_url: string }[] | null
 }
 
@@ -97,6 +116,7 @@ const listingSelect = `
   latitude,
   longitude,
   room_type,
+  place_id,
   bedrooms,
   bathrooms,
   available,
@@ -107,12 +127,13 @@ const listingSelect = `
   updated_at,
   outside_photo_url,
   street_photo_url,
-  profiles:user_id(full_name, phone, verified_landlord, verification_status),
+  profiles:user_id!inner(full_name, phone, verified_landlord, verification_status, trust_status, hidden_at),
   listing_images(image_url)
 `
 
 function toListing(row: ListingRow): Listing {
   const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+  const landlordTrustStatus = profile?.trust_status ?? (profile?.verification_status === 'verified' || profile?.verified_landlord ? 'verified' : 'trust_pending')
 
   return {
     id: row.id,
@@ -141,13 +162,16 @@ function toListing(row: ListingRow): Listing {
     streetPhotoUrl: row.street_photo_url,
     landlordName: profile?.full_name || 'RentaKasi landlord',
     landlordPhone: profile?.phone || '',
-    landlordVerified: profile?.verified_landlord === true || profile?.verification_status === 'verified',
+    landlordTrustStatus,
+    landlordVerified: landlordTrustStatus === 'verified',
+    landlordHiddenAt: profile?.hidden_at ?? null,
   }
 }
 
 export async function getListings(filters?: {
   search?: string
   location?: string
+  province?: string
   minPrice?: number
   maxPrice?: number
   roomType?: RoomType
@@ -163,10 +187,15 @@ export async function getListings(filters?: {
     query = query
       .eq('available', true)
       .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .is('profiles.hidden_at', null)
+      .not('profiles.trust_status', 'in', '("suspended","banned")')
   }
 
   if (filters?.userId) query = query.eq('user_id', filters.userId)
   if (filters?.location) query = query.ilike('location', `%${filters.location}%`)
+  if (!filters?.location && filters?.province && filters.province !== 'all') {
+    query = query.in('location', getTownshipsByProvince(filters.province).map((township) => township.name))
+  }
   if (filters?.minPrice) query = query.gte('price', filters.minPrice)
   if (filters?.maxPrice) query = query.lte('price', filters.maxPrice)
   if (filters?.roomType) query = query.eq('room_type', filters.roomType)
@@ -181,12 +210,21 @@ export async function getListings(filters?: {
   return (data as unknown as ListingRow[]).map(toListing)
 }
 
-export async function getListingById(id: string) {
-  const { data, error } = await supabase
+export async function getListingById(id: string, options?: { includeModerated?: boolean }) {
+  let query = supabase
     .from('listings')
     .select(listingSelect)
     .eq('id', id)
-    .single()
+
+  if (!options?.includeModerated) {
+    query = query
+      .eq('available', true)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .is('profiles.hidden_at', null)
+      .not('profiles.trust_status', 'in', '("suspended","banned")')
+  }
+
+  const { data, error } = await query.single()
 
   if (error) throw error
   return toListing(data as unknown as ListingRow)
@@ -207,6 +245,7 @@ export async function createListing(userId: string, input: ListingInput) {
       landmark: input.landmark ?? null,
       taxi_route_proximity: input.taxiRouteProximity ?? null,
       transport_info: input.transportInfo ?? null,
+      place_id: await resolvePlaceId(input.location),
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
       room_type: input.roomType ?? null,
@@ -221,7 +260,7 @@ export async function createListing(userId: string, input: ListingInput) {
 
   if (error) throw error
   await replaceListingImages(data.id, input.images ?? [])
-  return getListingById(data.id)
+  return getListingById(data.id, { includeModerated: true })
 }
 
 export async function updateListing(id: string, userId: string, input: ListingInput) {
@@ -238,6 +277,7 @@ export async function updateListing(id: string, userId: string, input: ListingIn
       landmark: input.landmark ?? null,
       taxi_route_proximity: input.taxiRouteProximity ?? null,
       transport_info: input.transportInfo ?? null,
+      place_id: await resolvePlaceId(input.location),
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
       room_type: input.roomType ?? null,
@@ -252,7 +292,7 @@ export async function updateListing(id: string, userId: string, input: ListingIn
 
   if (error) throw error
   await replaceListingImages(id, input.images ?? [])
-  return getListingById(id)
+  return getListingById(id, { includeModerated: true })
 }
 
 export async function deleteListing(id: string, userId: string) {
@@ -306,10 +346,25 @@ async function replaceListingImages(listingId: string, imageUrls: string[]) {
 }
 
 async function updateProfilePhone(userId: string, phone: string) {
+  const normalizedPhone = normalizeSouthAfricanPhone(phone)
+  if (!normalizedPhone.isValid) throw new Error('Enter a valid South African mobile number.')
+
   const { error } = await supabase
     .from('profiles')
-    .update({ phone })
+    .update({ phone: normalizedPhone.display })
     .eq('id', userId)
 
   if (error) throw error
+}
+
+async function resolvePlaceId(location: string) {
+  const { data, error } = await supabase
+    .from('places')
+    .select('id')
+    .eq('place_type', 'township')
+    .ilike('name', location)
+    .maybeSingle()
+
+  if (error) return null
+  return data?.id ?? null
 }

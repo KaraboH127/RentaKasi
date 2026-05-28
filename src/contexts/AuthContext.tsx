@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import type { UserRole } from '@/lib/listings'
+import type { LandlordTrustStatus, UserRole } from '@/lib/listings'
 
 export interface AppUser {
   id: string
@@ -10,6 +10,8 @@ export interface AppUser {
   phone: string
   avatarUrl: string | null
   role: UserRole
+  landlordTrustStatus: LandlordTrustStatus
+  hiddenAt: string | null
 }
 
 interface AuthContextType {
@@ -28,7 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 async function buildAppUser(authUser: SupabaseUser): Promise<AppUser> {
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, phone, avatar_url')
+    .select('full_name, phone, avatar_url, trust_status, hidden_at')
     .eq('id', authUser.id)
     .maybeSingle()
 
@@ -39,6 +41,8 @@ async function buildAppUser(authUser: SupabaseUser): Promise<AppUser> {
     phone: profile?.phone || '',
     avatarUrl: profile?.avatar_url || null,
     role: (authUser.user_metadata?.role as UserRole) || 'tenant',
+    landlordTrustStatus: (profile?.trust_status as LandlordTrustStatus | null) ?? 'trust_pending',
+    hiddenAt: profile?.hidden_at ?? null,
   }
 }
 
