@@ -94,7 +94,7 @@ export function ReportDialog({ children, targetType, listingId, landlordId, titl
                     <Input
                       value={phoneInput}
                       onChange={(event) => setPhoneInput(event.target.value)}
-                      placeholder="068 189 7698"
+                      placeholder="067 990 6451"
                       inputMode="tel"
                       autoComplete="tel"
                       className="h-11"
