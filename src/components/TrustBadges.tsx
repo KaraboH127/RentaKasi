@@ -1,4 +1,4 @@
-import { BadgeCheck, Ban, Clock, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { BadgeCheck, Ban, Clock, Phone, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import type { Listing } from '@/lib/listings'
 
@@ -7,16 +7,22 @@ export function TrustBadges({ listing, compact = false }: { listing: Listing; co
 
   return (
     <div className="flex flex-wrap gap-2">
-      {listing.landlordTrustStatus === 'verified' && (
-        <Badge className={`${labelClassName} bg-secondary text-secondary-foreground`}>
+      {listing.landlordTrustStatus === 'trusted' && (
+        <Badge className={`${labelClassName} border-secondary/30 bg-secondary/10 text-secondary hover:bg-secondary/15`}>
           <BadgeCheck className="h-3 w-3" />
-          Verified landlord
+          Trusted
         </Badge>
       )}
-      {listing.landlordTrustStatus === 'trust_pending' && (
-        <Badge variant="outline" className={labelClassName}>
+      {listing.landlordTrustStatus === 'phone_verified' && (
+        <Badge variant="outline" className={`${labelClassName} border-primary/25 bg-primary/5 text-primary`}>
+          <Phone className="h-3 w-3" />
+          Phone verified
+        </Badge>
+      )}
+      {listing.landlordTrustStatus === 'pending' && (
+        <Badge variant="outline" className={`${labelClassName} text-muted-foreground`}>
           <Clock className="h-3 w-3" />
-          Trust pending
+          New
         </Badge>
       )}
       {listing.landlordTrustStatus === 'suspended' && (

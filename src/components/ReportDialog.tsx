@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { createReport, type ReportReason, type ReportTargetType } from '@/lib/reports'
+import { createReport, type ReportCategory, type ReportTargetType } from '@/lib/reports'
 
 interface ReportDialogProps {
   children: ReactNode
@@ -19,7 +19,7 @@ interface ReportDialogProps {
 export function ReportDialog({ children, targetType, listingId, landlordId, title }: ReportDialogProps) {
   const { user, isAuthenticated } = useAuth()
   const { toast } = useToast()
-  const [reason, setReason] = useState<ReportReason>('scam')
+  const [category, setCategory] = useState<ReportCategory>('scam')
   const [details, setDetails] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -31,7 +31,7 @@ export function ReportDialog({ children, targetType, listingId, landlordId, titl
 
     setIsSubmitting(true)
     try {
-      await createReport(user.id, { targetType, listingId, landlordId, reason, details })
+      await createReport(user.id, { targetType, listingId, landlordId, category, details })
       toast({
         title: 'Report submitted',
         description: targetType === 'landlord'
@@ -39,7 +39,7 @@ export function ReportDialog({ children, targetType, listingId, landlordId, titl
           : 'Thank you. The RentaKasi team will review this concern.',
       })
       setDetails('')
-      setReason('scam')
+      setCategory('scam')
     } catch (error) {
       toast({ title: 'Could not submit report', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' })
     } finally {
@@ -57,22 +57,24 @@ export function ReportDialog({ children, targetType, listingId, landlordId, titl
             {title}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Report scams, wrong details, unsafe behavior, or listings that are no longer available.
+            Report scams, fake photos, wrong locations, spam, unsafe behavior, or landlords who do not respond.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <div className="space-y-4">
           <div>
             <label className="mb-2 block text-sm font-medium">Reason</label>
-            <Select value={reason} onValueChange={(value) => setReason(value as ReportReason)}>
+            <Select value={category} onValueChange={(value) => setCategory(value as ReportCategory)}>
               <SelectTrigger className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="scam">Possible scam or fraud</SelectItem>
-                <SelectItem value="wrong_information">Wrong listing information</SelectItem>
-                <SelectItem value="unavailable">Room is not available</SelectItem>
-                <SelectItem value="unsafe">Unsafe or concerning behavior</SelectItem>
+                <SelectItem value="scam">Scam</SelectItem>
+                <SelectItem value="fake_photos">Fake photos</SelectItem>
+                <SelectItem value="wrong_location">Wrong location</SelectItem>
+                <SelectItem value="spam">Spam</SelectItem>
+                <SelectItem value="dangerous">Dangerous</SelectItem>
+                <SelectItem value="no_response">No response</SelectItem>
                 <SelectItem value="other">Other concern</SelectItem>
               </SelectContent>
             </Select>

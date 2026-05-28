@@ -8,7 +8,7 @@ import { DetailMap } from '@/components/DetailMap'
 import { ReportDialog } from '@/components/ReportDialog'
 import { TrustBadges } from '@/components/TrustBadges'
 import { getListingById, type Listing } from '@/lib/listings'
-import { normalizeSouthAfricanPhone } from '@/lib/phone'
+import { buildWhatsAppUrl, normalizeSouthAfricanPhone } from '@/lib/phone'
 import { getRoomTypeLabel } from '@/lib/rental-options'
 import { MapPin, Phone, ArrowLeft, Home, Calendar, Flag, ShieldCheck, Navigation } from 'lucide-react'
 
@@ -79,8 +79,8 @@ export default function ListingDetail() {
   const images = listing.images.length > 0 ? listing.images : ['https://placehold.co/800x600/e3ddd8/1f242d?text=No+Image']
   const contactName = listing.landlordName || 'there'
   const phone = normalizeSouthAfricanPhone(listing.landlordPhone)
-  const whatsappMessage = encodeURIComponent(`Hi ${contactName}, I am interested in the room you listed on RentaKasi: "${listing.title}" in ${listing.location} for R${listing.price}/month. Is it still available?`)
-  const whatsappUrl = phone.isValid ? `https://wa.me/${phone.whatsapp}?text=${whatsappMessage}` : '#'
+  const whatsappMessage = `Hi ${contactName}, I am interested in the room you listed on RentaKasi: "${listing.title}" in ${listing.location} for R${listing.price}/month. Is it still available?`
+  const whatsappUrl = buildWhatsAppUrl(listing.landlordPhone, whatsappMessage) ?? '#'
   const formattedDate = new Date(listing.createdAt).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })
 
   return (

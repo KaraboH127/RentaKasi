@@ -15,7 +15,7 @@ interface ListingCardProps {
 export function ListingCard({ listing, featured = false }: ListingCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const primaryImage = listing.images?.[0] || listing.outsidePhotoUrl || 'https://placehold.co/600x400/e3ddd8/1f242d?text=No+Image'
-  const isTrusted = listing.landlordTrustStatus === 'verified' || listing.verificationStatus === 'verified'
+  const isTrusted = listing.landlordTrustStatus === 'trusted' || listing.verificationStatus === 'verified'
 
   return (
     <Link to={`/listing/${listing.id}`} className="group block rounded-2xl touch-manipulation rk-focus">

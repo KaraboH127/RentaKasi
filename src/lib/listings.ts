@@ -4,7 +4,8 @@ import { normalizeSouthAfricanPhone } from '@/lib/phone'
 
 export type UserRole = 'tenant' | 'landlord'
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected'
-export type LandlordTrustStatus = 'trust_pending' | 'verified' | 'suspended' | 'banned'
+export type LandlordTrustStatus = 'pending' | 'phone_verified' | 'trusted' | 'suspended' | 'banned'
+type LegacyLandlordTrustStatus = LandlordTrustStatus | 'trust_pending' | 'verified'
 
 export interface Listing {
   id: string
@@ -36,6 +37,12 @@ export interface Listing {
   landlordTrustStatus: LandlordTrustStatus
   landlordVerified: boolean
   landlordHiddenAt: string | null
+  landlordTrustScore: number
+  landlordRiskScore: number
+  landlordReportCount: number
+  hiddenAt: string | null
+  hiddenReason: string | null
+  moderationReviewRequired: boolean
 }
 
 export interface ListingInput {
@@ -57,6 +64,19 @@ export interface ListingInput {
   outsidePhotoUrl?: string | null
   streetPhotoUrl?: string | null
   landlordPhone?: string
+}
+
+interface ListingProfileRow {
+  full_name: string | null
+  phone: string | null
+  verified_landlord: boolean | null
+  verification_status: VerificationStatus | null
+  trust_status: LegacyLandlordTrustStatus | null
+  landlord_verification_status: LandlordTrustStatus | null
+  hidden_at: string | null
+  trust_score: number | null
+  risk_score: number | null
+  report_count: number | null
 }
 
 interface ListingRow {
@@ -84,21 +104,10 @@ interface ListingRow {
   updated_at: string
   outside_photo_url: string | null
   street_photo_url: string | null
-  profiles?: {
-    full_name: string | null
-    phone: string | null
-    verified_landlord: boolean | null
-    verification_status: VerificationStatus | null
-    trust_status: LandlordTrustStatus | null
-    hidden_at: string | null
-  } | {
-    full_name: string | null
-    phone: string | null
-    verified_landlord: boolean | null
-    verification_status: VerificationStatus | null
-    trust_status: LandlordTrustStatus | null
-    hidden_at: string | null
-  }[] | null
+  hidden_at: string | null
+  hidden_reason: string | null
+  moderation_review_required: boolean | null
+  profiles?: ListingProfileRow | ListingProfileRow[] | null
   listing_images?: { image_url: string }[] | null
 }
 
@@ -127,13 +136,42 @@ const listingSelect = `
   updated_at,
   outside_photo_url,
   street_photo_url,
-  profiles:user_id!inner(full_name, phone, verified_landlord, verification_status, trust_status, hidden_at),
+  hidden_at,
+  hidden_reason,
+  moderation_review_required,
+  profiles:user_id!inner(full_name, phone, verified_landlord, verification_status, trust_status, landlord_verification_status, hidden_at, trust_score, risk_score, report_count),
   listing_images(image_url)
 `
 
+function normalizeLandlordTrustStatus(profile?: ListingProfileRow | null): LandlordTrustStatus {
+  if (!profile) return 'pending'
+
+  if (profile.landlord_verification_status) return profile.landlord_verification_status
+  if (profile.trust_status === 'suspended' || profile.trust_status === 'banned') return profile.trust_status
+  if (profile.trust_status === 'trusted' || profile.trust_status === 'phone_verified') return profile.trust_status
+  if (profile.trust_status === 'verified' || profile.verification_status === 'verified' || profile.verified_landlord) return 'trusted'
+
+  return 'pending'
+}
+
+function getListingVisibilityRank(listing: Listing) {
+  const statusWeight: Record<LandlordTrustStatus, number> = {
+    trusted: 500,
+    phone_verified: 250,
+    pending: 0,
+    suspended: -1000,
+    banned: -2000,
+  }
+
+  return statusWeight[listing.landlordTrustStatus]
+    + listing.landlordTrustScore
+    - listing.landlordRiskScore
+    + (listing.verificationStatus === 'verified' ? 100 : 0)
+}
+
 function toListing(row: ListingRow): Listing {
   const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
-  const landlordTrustStatus = profile?.trust_status ?? (profile?.verification_status === 'verified' || profile?.verified_landlord ? 'verified' : 'trust_pending')
+  const landlordTrustStatus = normalizeLandlordTrustStatus(profile)
 
   return {
     id: row.id,
@@ -163,8 +201,14 @@ function toListing(row: ListingRow): Listing {
     landlordName: profile?.full_name || 'RentaKasi landlord',
     landlordPhone: profile?.phone || '',
     landlordTrustStatus,
-    landlordVerified: landlordTrustStatus === 'verified',
+    landlordVerified: landlordTrustStatus === 'trusted' || landlordTrustStatus === 'phone_verified',
     landlordHiddenAt: profile?.hidden_at ?? null,
+    landlordTrustScore: profile?.trust_score ?? 40,
+    landlordRiskScore: profile?.risk_score ?? 0,
+    landlordReportCount: profile?.report_count ?? 0,
+    hiddenAt: row.hidden_at,
+    hiddenReason: row.hidden_reason,
+    moderationReviewRequired: row.moderation_review_required ?? false,
   }
 }
 
@@ -187,8 +231,9 @@ export async function getListings(filters?: {
     query = query
       .eq('available', true)
       .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .is('hidden_at', null)
       .is('profiles.hidden_at', null)
-      .not('profiles.trust_status', 'in', '("suspended","banned")')
+      .not('profiles.landlord_verification_status', 'in', '("suspended","banned")')
   }
 
   if (filters?.userId) query = query.eq('user_id', filters.userId)
@@ -207,7 +252,14 @@ export async function getListings(filters?: {
 
   const { data, error } = await query
   if (error) throw error
-  return (data as unknown as ListingRow[]).map(toListing)
+  const listings = (data as unknown as ListingRow[]).map(toListing)
+
+  if (filters?.userId) return listings
+  return listings.sort((a, b) => {
+    const rankDifference = getListingVisibilityRank(b) - getListingVisibilityRank(a)
+    if (rankDifference !== 0) return rankDifference
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
 }
 
 export async function getListingById(id: string, options?: { includeModerated?: boolean }) {
@@ -220,8 +272,9 @@ export async function getListingById(id: string, options?: { includeModerated?: 
     query = query
       .eq('available', true)
       .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .is('hidden_at', null)
       .is('profiles.hidden_at', null)
-      .not('profiles.trust_status', 'in', '("suspended","banned")')
+      .not('profiles.landlord_verification_status', 'in', '("suspended","banned")')
   }
 
   const { data, error } = await query.single()
@@ -351,7 +404,7 @@ async function updateProfilePhone(userId: string, phone: string) {
 
   const { error } = await supabase
     .from('profiles')
-    .update({ phone: normalizedPhone.display })
+    .update({ phone: normalizedPhone.display, phone_e164: normalizedPhone.e164 })
     .eq('id', userId)
 
   if (error) throw error

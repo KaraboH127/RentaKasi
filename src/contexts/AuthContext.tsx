@@ -30,9 +30,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 async function buildAppUser(authUser: SupabaseUser): Promise<AppUser> {
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, phone, avatar_url, trust_status, hidden_at')
+    .select('full_name, phone, avatar_url, landlord_verification_status, trust_status, hidden_at, trust_score, risk_score, report_count')
     .eq('id', authUser.id)
     .maybeSingle()
+
+  const legacyTrustStatus = profile?.trust_status as string | null | undefined
+  const landlordTrustStatus = (profile?.landlord_verification_status as LandlordTrustStatus | null)
+    ?? (legacyTrustStatus === 'verified' ? 'trusted' : null)
+    ?? (legacyTrustStatus === 'trust_pending' ? 'pending' : null)
+    ?? (legacyTrustStatus as LandlordTrustStatus | null)
+    ?? 'pending'
 
   return {
     id: authUser.id,
@@ -41,7 +48,7 @@ async function buildAppUser(authUser: SupabaseUser): Promise<AppUser> {
     phone: profile?.phone || '',
     avatarUrl: profile?.avatar_url || null,
     role: (authUser.user_metadata?.role as UserRole) || 'tenant',
-    landlordTrustStatus: (profile?.trust_status as LandlordTrustStatus | null) ?? 'trust_pending',
+    landlordTrustStatus,
     hiddenAt: profile?.hidden_at ?? null,
   }
 }
