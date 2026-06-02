@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { LandlordVerificationBadge, VerificationProgress, VerificationBenefits } from '@/components/LandlordVerification'
 import { VerificationStatusDetail } from '@/components/VerificationStatusDetail'
 import { ShieldCheck, X } from 'lucide-react'
-import type { LandlordTrustStatus } from '@/lib/listings'
+import type { LandlordVerificationStatus } from '@/lib/listings'
 
 export function VerificationDetailsModal({
   status,
@@ -13,7 +13,7 @@ export function VerificationDetailsModal({
   isOpen,
   onOpenChange,
 }: {
-  status: LandlordTrustStatus
+  status: LandlordVerificationStatus
   trustScore?: number | null
   riskScore?: number | null
   reportCount?: number | null
@@ -52,7 +52,7 @@ export function VerificationDetailsModal({
           {/* Metrics */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-[10px] font-semibold uppercase text-muted-foreground mb-1">Trust Score</p>
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground mb-1">Verification Score</p>
               <p className="font-display text-xl font-bold">{trustScore ?? 40}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3">

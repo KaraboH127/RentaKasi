@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button'
 import { VerificationBenefits, VerificationProgress, VerificationStatusGuide } from '@/components/LandlordVerification'
 import { VerificationStatusDetail } from '@/components/VerificationStatusDetail'
 import { ArrowLeft, ShieldCheck } from 'lucide-react'
-import type { LandlordTrustStatus } from '@/lib/listings'
+import type { LandlordVerificationStatus } from '@/lib/listings'
 
-const allStatuses: LandlordTrustStatus[] = ['pending', 'phone_verified', 'trusted', 'suspended', 'banned']
+const allStatuses: LandlordVerificationStatus[] = ['pending', 'verified', 'suspended', 'banned']
 
 export default function Verification() {
   return (
@@ -24,7 +24,7 @@ export default function Verification() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">Verification Guide</p>
             <h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl">Landlord verification should be easy to understand.</h1>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
-              RentaKasi uses verification status, trust signals, reports, and moderation checks to make marketplace safety visible. Your verification status helps tenants make better decisions and helps you build confidence over time.
+              RentaKasi uses verification status, verification checks, reports, and moderation safeguards to make marketplace safety visible. Your verification status helps tenants make better decisions and helps you build confidence over time.
             </p>
           </div>
         </div>
@@ -35,10 +35,10 @@ export default function Verification() {
         <div className="rk-surface rounded-2xl p-5 sm:p-6">
           <h2 className="font-display text-xl font-bold mb-3">Your Verification Path</h2>
           <p className="text-sm leading-relaxed text-muted-foreground mb-5">
-            Most landlords progress from pending verification through phone verification to trusted status as they build a stronger trust record on RentaKasi.
+            Most landlords move from pending verification to verified once account and listing checks are complete.
           </p>
           <div>
-            <VerificationProgress status="phone_verified" />
+            <VerificationProgress status="pending" />
           </div>
         </div>
 
@@ -54,7 +54,7 @@ export default function Verification() {
       <section className="container mx-auto max-w-5xl px-4 pb-12">
         <div className="mb-8">
           <h2 className="font-display text-2xl font-bold mb-2">What Each Status Means</h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">Your verification status is set from backend profile data and updated by trusted moderation processes. Here's what each means for you and your tenants.</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">Your verification status is set from backend profile data and updated by moderation processes. Here's what each means for you and your tenants.</p>
         </div>
 
         <div className="grid gap-4">

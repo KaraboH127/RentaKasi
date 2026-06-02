@@ -98,7 +98,7 @@ export default function CreateListing() {
     )
   }
 
-  if (user.landlordTrustStatus === 'suspended' || user.landlordTrustStatus === 'banned' || user.hiddenAt) {
+  if (user.landlordVerificationStatus === 'suspended' || user.landlordVerificationStatus === 'banned' || user.hiddenAt) {
     return (
       <div className="container mx-auto px-4 py-20 text-center max-w-md">
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">

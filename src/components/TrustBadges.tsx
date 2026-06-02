@@ -8,7 +8,7 @@ export function TrustBadges({ listing, compact = false }: { listing: Listing; co
 
   return (
     <div className="flex flex-wrap gap-2">
-      <LandlordVerificationBadge status={listing.landlordTrustStatus} compact={compact} publicLabel className={labelClassName} />
+      <LandlordVerificationBadge status={listing.landlordVerificationStatus} compact={compact} publicLabel className={labelClassName} />
       {listing.verificationStatus === 'verified' && (
         <Badge className={`${labelClassName} bg-primary text-primary-foreground`}>
           <ShieldCheck className="h-3 w-3" />

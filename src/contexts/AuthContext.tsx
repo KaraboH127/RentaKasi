@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import type { LandlordTrustStatus, UserRole } from '@/lib/listings'
+import type { LandlordVerificationStatus, UserRole } from '@/lib/listings'
 
 export interface AppUser {
   id: string
@@ -10,8 +10,7 @@ export interface AppUser {
   phone: string
   avatarUrl: string | null
   role: UserRole
-  landlordTrustStatus: LandlordTrustStatus
-  landlordVerificationStatus: LandlordTrustStatus
+  landlordVerificationStatus: LandlordVerificationStatus
   landlordTrustScore: number
   landlordRiskScore: number
   landlordReportCount: number
@@ -38,20 +37,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 async function buildAppUser(authUser: SupabaseUser): Promise<AppUser> {
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, phone, avatar_url, landlord_verification_status, trust_status, hidden_at, trust_score, risk_score, report_count, phone_verified_at, phone_verified, id_verified, property_verified')
+    .select('full_name, phone, avatar_url, landlord_verification_status, hidden_at, trust_score, risk_score, report_count, phone_verified_at, phone_verified, id_verified, property_verified')
     .eq('id', authUser.id)
     .maybeSingle()
 
-  const legacyTrustStatus = profile?.trust_status as string | null | undefined
   const rawLandlordStatus = profile?.landlord_verification_status as string | null | undefined
-  const landlordTrustStatus: LandlordTrustStatus =
+  const landlordVerificationStatus: LandlordVerificationStatus =
     rawLandlordStatus === 'verified' || rawLandlordStatus === 'suspended' || rawLandlordStatus === 'banned'
       ? rawLandlordStatus
-      : rawLandlordStatus === 'trusted' || legacyTrustStatus === 'verified' || legacyTrustStatus === 'trusted'
+      : rawLandlordStatus === 'trusted'
         ? 'verified'
-        : legacyTrustStatus === 'suspended' || legacyTrustStatus === 'banned'
-          ? legacyTrustStatus
-          : 'pending'
+        : 'pending'
 
   return {
     id: authUser.id,
@@ -60,12 +56,11 @@ async function buildAppUser(authUser: SupabaseUser): Promise<AppUser> {
     phone: profile?.phone || '',
     avatarUrl: profile?.avatar_url || null,
     role: (authUser.user_metadata?.role as UserRole) || 'tenant',
-    landlordTrustStatus,
-    landlordVerificationStatus: landlordTrustStatus,
+    landlordVerificationStatus,
     landlordTrustScore: profile?.trust_score ?? 40,
     landlordRiskScore: profile?.risk_score ?? 0,
     landlordReportCount: profile?.report_count ?? 0,
-    landlordPhoneVerified: profile?.phone_verified ?? (rawLandlordStatus === 'phone_verified' || landlordTrustStatus === 'verified'),
+    landlordPhoneVerified: profile?.phone_verified ?? false,
     landlordIdVerified: profile?.id_verified ?? false,
     landlordPropertyVerified: profile?.property_verified ?? false,
     phoneVerifiedAt: profile?.phone_verified_at ?? null,

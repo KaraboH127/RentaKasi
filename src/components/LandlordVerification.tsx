@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
-import { BadgeCheck, Ban, Check, Clock, Eye, Phone, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { BadgeCheck, Ban, Check, Clock, Eye, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type { LandlordTrustStatus } from '@/lib/listings'
+import type { LandlordVerificationStatus } from '@/lib/listings'
 
 type VerificationTone = 'neutral' | 'safe' | 'trusted' | 'restricted'
 
@@ -16,7 +16,7 @@ interface StatusContent {
   tone: VerificationTone
 }
 
-export const landlordVerificationStatuses: Record<LandlordTrustStatus, StatusContent> = {
+export const landlordVerificationStatuses: Record<LandlordVerificationStatus, StatusContent> = {
   pending: {
     label: 'Pending',
     publicLabel: 'Pending Verification',
@@ -25,27 +25,11 @@ export const landlordVerificationStatuses: Record<LandlordTrustStatus, StatusCon
     icon: Clock,
     tone: 'neutral',
   },
-  phone_verified: {
-    label: 'Phone Verified',
-    publicLabel: 'Phone Verified',
-    description: 'Phone number has been verified.',
-    detail: 'The landlord has confirmed a reachable South African mobile number linked to their account.',
-    icon: Phone,
-    tone: 'safe',
-  },
-  trusted: {
-    label: 'Trusted',
-    publicLabel: 'Trusted Landlord',
-    description: 'Landlord has met trust requirements.',
-    detail: 'The landlord has passed platform trust checks and has a stronger trust record on RentaKasi.',
-    icon: BadgeCheck,
-    tone: 'trusted',
-  },
   verified: {
     label: 'Verified',
     publicLabel: 'Verified Landlord',
-    description: 'Landlord has met trust requirements.',
-    detail: 'The landlord has passed platform trust checks and has a stronger trust record on RentaKasi.',
+    description: 'Landlord verification is complete.',
+    detail: 'The landlord has completed platform verification checks on RentaKasi.',
     icon: BadgeCheck,
     tone: 'trusted',
   },
@@ -67,8 +51,8 @@ export const landlordVerificationStatuses: Record<LandlordTrustStatus, StatusCon
   },
 }
 
-const statusOrder: LandlordTrustStatus[] = ['pending', 'phone_verified', 'trusted', 'suspended', 'banned']
-const activeProgressSteps: LandlordTrustStatus[] = ['pending', 'phone_verified', 'trusted']
+const statusOrder: LandlordVerificationStatus[] = ['pending', 'verified', 'suspended', 'banned']
+const activeProgressSteps: LandlordVerificationStatus[] = ['pending', 'verified']
 
 const badgeClasses: Record<VerificationTone, string> = {
   neutral: 'border-muted-foreground/25 bg-muted/45 text-muted-foreground',
@@ -77,7 +61,7 @@ const badgeClasses: Record<VerificationTone, string> = {
   restricted: 'border-destructive/35 bg-destructive/5 text-destructive',
 }
 
-function getStepState(status: LandlordTrustStatus, step: LandlordTrustStatus) {
+function getStepState(status: LandlordVerificationStatus, step: LandlordVerificationStatus) {
   if (status === 'suspended' || status === 'banned') return step === 'pending' ? 'blocked' : 'upcoming'
   const currentIndex = activeProgressSteps.indexOf(status)
   const stepIndex = activeProgressSteps.indexOf(step)
@@ -92,7 +76,7 @@ export function LandlordVerificationBadge({
   publicLabel = false,
   className,
 }: {
-  status: LandlordTrustStatus
+  status: LandlordVerificationStatus
   compact?: boolean
   publicLabel?: boolean
   className?: string
@@ -116,11 +100,10 @@ export function LandlordVerificationBadge({
   )
 }
 
-export function VerificationProgress({ status }: { status: LandlordTrustStatus }) {
+export function VerificationProgress({ status }: { status: LandlordVerificationStatus }) {
   const steps = [
-    { key: 'pending' as const, title: 'Phone Verification', caption: 'Confirm a reachable phone number' },
-    { key: 'phone_verified' as const, title: 'Trust Review', caption: 'Review account and listing signals' },
-    { key: 'trusted' as const, title: 'Trusted Landlord', caption: 'Earn stronger tenant confidence' },
+    { key: 'pending' as const, title: 'Verification Review', caption: 'Complete account and listing checks' },
+    { key: 'verified' as const, title: 'Verified Landlord', caption: 'Verification checks are complete' },
   ]
 
   return (
@@ -191,7 +174,7 @@ export function LandlordVerificationCard({
   riskScore,
   reportCount,
 }: {
-  status: LandlordTrustStatus
+  status: LandlordVerificationStatus
   trustScore?: number | null
   riskScore?: number | null
   reportCount?: number | null
@@ -224,10 +207,10 @@ export function LandlordVerificationCard({
 
       {/* Metrics Section */}
       <div className="mb-6">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Trust Metrics</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Verification Metrics</p>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4 sm:p-5">
-            <p className="text-[11px] font-semibold uppercase text-primary mb-2">Trust Score</p>
+            <p className="text-[11px] font-semibold uppercase text-primary mb-2">Verification Score</p>
             <p className="font-display text-3xl font-bold text-foreground">{trustScore ?? 40}</p>
             <p className="text-xs text-muted-foreground mt-1">0-100 scale</p>
           </div>

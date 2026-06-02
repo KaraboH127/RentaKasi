@@ -70,14 +70,14 @@ function LandlordDashboard({ userId }: { userId: string }) {
           <p className="text-muted-foreground text-sm mt-1">Manage your room listings</p>
         </div>
         <Link to="/create-listing" aria-disabled={user?.hiddenAt ? true : undefined}>
-          <Button className="gap-2 w-full sm:w-auto touch-manipulation" size="lg" data-testid="button-new-listing" disabled={!!user?.hiddenAt || user?.landlordTrustStatus === 'suspended' || user?.landlordTrustStatus === 'banned'}>
+          <Button className="gap-2 w-full sm:w-auto touch-manipulation" size="lg" data-testid="button-new-listing" disabled={!!user?.hiddenAt || user?.landlordVerificationStatus === 'suspended' || user?.landlordVerificationStatus === 'banned'}>
             <PlusCircle className="w-5 h-5" />
             List a Room
           </Button>
         </Link>
       </div>
 
-      {(user?.hiddenAt || user?.landlordTrustStatus === 'suspended' || user?.landlordTrustStatus === 'banned') && (
+      {(user?.hiddenAt || user?.landlordVerificationStatus === 'suspended' || user?.landlordVerificationStatus === 'banned') && (
         <div className="mb-6 rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive">
           Your public listings are paused because your landlord account has multiple reports and needs moderation review.
         </div>
@@ -86,7 +86,7 @@ function LandlordDashboard({ userId }: { userId: string }) {
       {user && (
         <div className="mb-6 sm:mb-10">
           <LandlordVerificationCard
-            status={user.landlordTrustStatus}
+            status={user.landlordVerificationStatus}
             trustScore={user.landlordTrustScore}
             riskScore={user.landlordRiskScore}
             reportCount={user.landlordReportCount}
@@ -149,7 +149,7 @@ function LandlordDashboard({ userId }: { userId: string }) {
                     </Badge>
                     <Badge variant={listing.verificationStatus === 'verified' ? 'default' : 'outline'} className="text-[10px] sm:text-xs flex items-center gap-0.5 px-1.5 py-0.5">
                       <ShieldCheck className="w-2.5 h-2.5" />
-                      {listing.verificationStatus === 'verified' ? 'Verified' : 'Trust pending'}
+                      {listing.verificationStatus === 'verified' ? 'Verified' : 'Pending Verification'}
                     </Badge>
                     <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
                       Expires {listing.expiresAt ? new Date(listing.expiresAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' }) : 'not set'}
@@ -244,7 +244,7 @@ function TenantDashboard() {
       <div className="mb-6 sm:mb-10">
         <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest mb-1">Tenant Dashboard</p>
         <h1 className="font-display text-2xl sm:text-3xl font-bold">Your Space</h1>
-        <p className="text-muted-foreground text-sm mt-1">Saved rental preferences and updates from trusted listings</p>
+        <p className="text-muted-foreground text-sm mt-1">Saved rental preferences and updates from verified listings</p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">

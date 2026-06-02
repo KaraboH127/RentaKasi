@@ -4,9 +4,7 @@ import { normalizeSouthAfricanPhone } from '@/lib/phone'
 
 export type UserRole = 'tenant' | 'landlord'
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected'
-export type LandlordVerificationStatus = 'pending' | 'phone_verified' | 'trusted' | 'verified' | 'suspended' | 'banned'
-export type LandlordTrustStatus = LandlordVerificationStatus
-type LegacyLandlordTrustStatus = LandlordVerificationStatus | 'trust_pending'
+export type LandlordVerificationStatus = 'pending' | 'verified' | 'suspended' | 'banned'
 
 export interface Listing {
   id: string
@@ -35,7 +33,6 @@ export interface Listing {
   streetPhotoUrl: string | null
   landlordName: string
   landlordPhone: string
-  landlordTrustStatus: LandlordTrustStatus
   landlordVerificationStatus: LandlordVerificationStatus
   landlordVerified: boolean
   landlordPhoneVerified: boolean
@@ -76,8 +73,7 @@ interface ListingProfileRow {
   phone: string | null
   verified_landlord: boolean | null
   verification_status: VerificationStatus | null
-  trust_status: LegacyLandlordTrustStatus | null
-  landlord_verification_status: LegacyLandlordTrustStatus | null
+  landlord_verification_status: string | null
   phone_verified: boolean | null
   id_verified: boolean | null
   property_verified: boolean | null
@@ -147,11 +143,11 @@ const listingSelect = `
   hidden_at,
   hidden_reason,
   moderation_review_required,
-  profiles:user_id!inner(full_name, phone, verified_landlord, verification_status, trust_status, landlord_verification_status, phone_verified, id_verified, property_verified, hidden_at, trust_score, risk_score, report_count),
+  profiles:user_id!inner(full_name, phone, verified_landlord, verification_status, landlord_verification_status, phone_verified, id_verified, property_verified, hidden_at, trust_score, risk_score, report_count),
   listing_images(image_url)
 `
 
-function normalizeLandlordTrustStatus(profile?: ListingProfileRow | null): LandlordVerificationStatus {
+function normalizeLandlordVerificationStatus(profile?: ListingProfileRow | null): LandlordVerificationStatus {
   if (!profile) return 'pending'
 
   if (profile.landlord_verification_status === 'verified' || profile.landlord_verification_status === 'suspended' || profile.landlord_verification_status === 'banned') {
@@ -159,23 +155,20 @@ function normalizeLandlordTrustStatus(profile?: ListingProfileRow | null): Landl
   }
   if (profile.landlord_verification_status === 'trusted') return 'verified'
   if (profile.landlord_verification_status === 'phone_verified') return 'pending'
-  if (profile.trust_status === 'suspended' || profile.trust_status === 'banned') return profile.trust_status
-  if (profile.trust_status === 'trusted' || profile.trust_status === 'verified' || profile.verification_status === 'verified' || profile.verified_landlord) return 'verified'
+  if (profile.verification_status === 'verified' || profile.verified_landlord) return 'verified'
 
   return 'pending'
 }
 
 function getListingVisibilityRank(listing: Listing) {
-  const statusWeight: Record<LandlordTrustStatus, number> = {
+  const statusWeight: Record<LandlordVerificationStatus, number> = {
     verified: 500,
-    trusted: 500,
-    phone_verified: 250,
     pending: 0,
     suspended: -1000,
     banned: -2000,
   }
 
-  return statusWeight[listing.landlordTrustStatus]
+  return statusWeight[listing.landlordVerificationStatus]
     + listing.landlordTrustScore
     - listing.landlordRiskScore
     + (listing.verificationStatus === 'verified' ? 100 : 0)
@@ -183,7 +176,7 @@ function getListingVisibilityRank(listing: Listing) {
 
 function toListing(row: ListingRow): Listing {
   const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
-  const landlordTrustStatus = normalizeLandlordTrustStatus(profile)
+  const landlordVerificationStatus = normalizeLandlordVerificationStatus(profile)
 
   return {
     id: row.id,
@@ -212,10 +205,9 @@ function toListing(row: ListingRow): Listing {
     streetPhotoUrl: row.street_photo_url,
     landlordName: profile?.full_name || 'RentaKasi landlord',
     landlordPhone: profile?.phone || '',
-    landlordTrustStatus,
-    landlordVerificationStatus: landlordTrustStatus,
-    landlordVerified: landlordTrustStatus === 'verified',
-    landlordPhoneVerified: profile?.phone_verified ?? landlordTrustStatus === 'verified',
+    landlordVerificationStatus,
+    landlordVerified: landlordVerificationStatus === 'verified',
+    landlordPhoneVerified: profile?.phone_verified ?? false,
     landlordIdVerified: profile?.id_verified ?? false,
     landlordPropertyVerified: profile?.property_verified ?? false,
     landlordHiddenAt: profile?.hidden_at ?? null,

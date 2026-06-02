@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import type { Listing } from '@/lib/listings'
 
 export function LandlordProfileCard({ listing }: { listing: Listing }) {
-  const { landlordName, landlordPhone, landlordTrustStatus, landlordHiddenAt } = listing
+  const { landlordName, landlordPhone, landlordVerificationStatus, landlordHiddenAt } = listing
 
   // Extract initials for avatar
   const initials = landlordName
@@ -16,7 +16,7 @@ export function LandlordProfileCard({ listing }: { listing: Listing }) {
     .toUpperCase()
     .slice(0, 2)
 
-  const isRestricted = landlordHiddenAt || landlordTrustStatus === 'suspended' || landlordTrustStatus === 'banned'
+  const isRestricted = landlordHiddenAt || landlordVerificationStatus === 'suspended' || landlordVerificationStatus === 'banned'
 
   return (
     <div
@@ -33,7 +33,7 @@ export function LandlordProfileCard({ listing }: { listing: Listing }) {
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-foreground text-sm sm:text-base truncate">{landlordName}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <LandlordVerificationBadge status={landlordTrustStatus} compact publicLabel />
+            <LandlordVerificationBadge status={landlordVerificationStatus} compact publicLabel />
             {landlordHiddenAt && (
               <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 py-0.5 border-destructive/35 bg-destructive/5 text-destructive">
                 <MapPin className="w-2.5 h-2.5 mr-0.5" />
@@ -55,45 +55,36 @@ export function LandlordProfileCard({ listing }: { listing: Listing }) {
         </div>
       )}
 
-      {/* Trust Information */}
+      {/* Verification Information */}
       <div className="mb-4">
         <div
           className={cn(
             'rounded-xl p-3 flex gap-2',
-            (landlordTrustStatus === 'trusted' || landlordTrustStatus === 'verified')
+            landlordVerificationStatus === 'verified'
               ? 'bg-secondary/5 border border-secondary/25'
-              : landlordTrustStatus === 'phone_verified'
-                ? 'bg-primary/5 border border-primary/25'
-                : 'bg-muted/50'
+              : 'bg-muted/50'
           )}
         >
           <ShieldCheck
             className={cn(
               'h-4 w-4 shrink-0 mt-0.5',
-              (landlordTrustStatus === 'trusted' || landlordTrustStatus === 'verified')
+              landlordVerificationStatus === 'verified'
                 ? 'text-secondary'
-                : landlordTrustStatus === 'phone_verified'
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
+                : 'text-muted-foreground'
             )}
           />
           <div className="text-xs leading-relaxed text-muted-foreground">
-            {(landlordTrustStatus === 'trusted' || landlordTrustStatus === 'verified') && (
+            {landlordVerificationStatus === 'verified' && (
               <span>
-                <strong className="text-foreground">Verified landlord.</strong> This landlord has passed RentaKasi trust checks and has a strong track record.
+                <strong className="text-foreground">Verified landlord.</strong> This landlord has completed RentaKasi verification checks.
               </span>
             )}
-            {landlordTrustStatus === 'phone_verified' && (
-              <span>
-                <strong className="text-foreground">Phone verified.</strong> This landlord has confirmed their contact information.
-              </span>
-            )}
-            {landlordTrustStatus === 'pending' && (
+            {landlordVerificationStatus === 'pending' && (
               <span>
                 <strong className="text-foreground">Pending verification.</strong> Always meet in person and verify property details before paying.
               </span>
             )}
-            {(landlordTrustStatus === 'suspended' || landlordTrustStatus === 'banned') && (
+            {(landlordVerificationStatus === 'suspended' || landlordVerificationStatus === 'banned') && (
               <span>
                 <strong className="text-destructive">Account restricted.</strong> This account is currently not available on the platform.
               </span>
@@ -103,7 +94,7 @@ export function LandlordProfileCard({ listing }: { listing: Listing }) {
       </div>
 
       {/* Safety Reminder (Always shown for pending, subtle for others) */}
-      {landlordTrustStatus === 'pending' && (
+      {landlordVerificationStatus === 'pending' && (
         <div className="rounded-lg bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
           <p className="font-medium text-foreground mb-1">Safety reminder</p>
           <p>Always meet in person, verify the property matches photos, and never send money before you're certain the room and landlord details are real.</p>

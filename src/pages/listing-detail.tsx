@@ -84,7 +84,7 @@ export default function ListingDetail() {
   const whatsappMessage = `Hi ${contactName}, I am interested in the room you listed on RentaKasi: "${listing.title}" in ${listing.location} for R${listing.price}/month. Is it still available?`
   const whatsappUrl = buildWhatsAppUrl(listing.landlordPhone, whatsappMessage) ?? '#'
   const formattedDate = new Date(listing.createdAt).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })
-  const landlordVerification = landlordVerificationStatuses[listing.landlordTrustStatus]
+  const landlordVerification = landlordVerificationStatuses[listing.landlordVerificationStatus]
 
   return (
     <div className="bg-background min-h-screen pb-4 md:pb-20">

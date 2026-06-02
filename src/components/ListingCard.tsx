@@ -15,7 +15,7 @@ interface ListingCardProps {
 export function ListingCard({ listing, featured = false }: ListingCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const primaryImage = listing.images?.[0] || listing.outsidePhotoUrl || 'https://placehold.co/600x400/e3ddd8/1f242d?text=No+Image'
-  const isTrusted = listing.landlordTrustStatus === 'trusted' || listing.landlordTrustStatus === 'verified' || listing.verificationStatus === 'verified'
+  const isVerified = listing.landlordVerificationStatus === 'verified' || listing.verificationStatus === 'verified'
 
   return (
     <Link to={`/listing/${listing.id}`} className="group block rounded-2xl touch-manipulation rk-focus">
@@ -34,10 +34,10 @@ export function ListingCard({ listing, featured = false }: ListingCardProps) {
           <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent opacity-80" />
           <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
             {featured && <Badge className="bg-primary text-primary-foreground shadow-sm text-[10px] px-1.5 py-0.5">Featured</Badge>}
-            {isTrusted && (
+            {isVerified && (
               <Badge className="gap-1 bg-secondary text-secondary-foreground shadow-sm text-[10px] px-1.5 py-0.5">
                 <ShieldCheck className="h-3 w-3" />
-                Trusted
+                Verified
               </Badge>
             )}
           </div>

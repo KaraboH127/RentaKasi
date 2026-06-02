@@ -1,6 +1,6 @@
-import { BadgeCheck, Ban, Clock, Eye, Phone, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { BadgeCheck, Ban, Clock, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { LandlordTrustStatus } from '@/lib/listings'
+import type { LandlordVerificationStatus } from '@/lib/listings'
 
 type VerificationTone = 'neutral' | 'safe' | 'trusted' | 'restricted'
 
@@ -16,7 +16,7 @@ interface StatusContent {
   tone: VerificationTone
 }
 
-export const verificationStatusDetails: Record<LandlordTrustStatus, StatusContent> = {
+export const verificationStatusDetails: Record<LandlordVerificationStatus, StatusContent> = {
   pending: {
     label: 'Pending',
     publicLabel: 'Pending Verification',
@@ -28,35 +28,13 @@ export const verificationStatusDetails: Record<LandlordTrustStatus, StatusConten
     icon: Clock,
     tone: 'neutral',
   },
-  phone_verified: {
-    label: 'Phone Verified',
-    publicLabel: 'Phone Verified',
-    title: 'Phone number has been verified',
-    description: 'Your identity is partially verified.',
-    detail: 'You have confirmed a reachable South African mobile number linked to your account. This is the first step to building trust.',
-    tenantPerspective: 'Tenants see: This landlord has verified contact information. It\'s a positive signal, but they should still verify the property in person.',
-    nextSteps: 'Keep your account active and responsive. Build trust through positive tenant interactions to reach Trusted status.',
-    icon: Phone,
-    tone: 'safe',
-  },
-  trusted: {
-    label: 'Trusted',
-    publicLabel: 'Trusted Landlord',
-    title: 'Landlord has met trust requirements',
-    description: 'You have passed platform trust checks.',
-    detail: 'You have met RentaKasi platform trust requirements and have a stronger trust record. Your listings get better visibility and tenant confidence.',
-    tenantPerspective: 'Tenants see: This landlord has passed RentaKasi trust checks and has a strong track record. This is a strong positive signal.',
-    nextSteps: 'Maintain your trust status by continuing to respond to tenants and keeping your account in good standing. Avoid reports and violations.',
-    icon: BadgeCheck,
-    tone: 'trusted',
-  },
   verified: {
     label: 'Verified',
     publicLabel: 'Verified Landlord',
-    title: 'Landlord has met trust requirements',
-    description: 'You have passed platform trust checks.',
-    detail: 'You have met RentaKasi platform trust requirements and have a stronger trust record. Your listings get better visibility and tenant confidence.',
-    tenantPerspective: 'Tenants see: This landlord has passed RentaKasi trust checks and has a strong track record. This is a strong positive signal.',
+    title: 'Landlord verification is complete',
+    description: 'You have passed platform verification checks.',
+    detail: 'You have completed RentaKasi landlord verification checks. Your listings get better visibility and clearer tenant confidence.',
+    tenantPerspective: 'Tenants see: This landlord has completed RentaKasi verification checks. This is a strong positive signal.',
     nextSteps: 'Maintain your verified status by continuing to respond to tenants and keeping your account in good standing. Avoid reports and violations.',
     icon: BadgeCheck,
     tone: 'trusted',
@@ -96,7 +74,7 @@ export function VerificationStatusDetail({
   status,
   className,
 }: {
-  status: LandlordTrustStatus
+  status: LandlordVerificationStatus
   className?: string
 }) {
   const content = verificationStatusDetails[status]
@@ -136,7 +114,7 @@ export function VerificationStatusDetail({
   )
 }
 
-export function VerificationStatusCompactDetail({ status, className }: { status: LandlordTrustStatus; className?: string }) {
+export function VerificationStatusCompactDetail({ status, className }: { status: LandlordVerificationStatus; className?: string }) {
   const content = verificationStatusDetails[status]
 
   return (
