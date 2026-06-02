@@ -7,6 +7,7 @@ import { ListingMap } from '@/components/ListingMap'
 import { DetailMap } from '@/components/DetailMap'
 import { ReportDialog } from '@/components/ReportDialog'
 import { TrustBadges } from '@/components/TrustBadges'
+import { LandlordVerificationBadge, landlordVerificationStatuses } from '@/components/LandlordVerification'
 import { getListingById, type Listing } from '@/lib/listings'
 import { buildWhatsAppUrl, normalizeSouthAfricanPhone } from '@/lib/phone'
 import { getRoomTypeLabel } from '@/lib/rental-options'
@@ -82,6 +83,7 @@ export default function ListingDetail() {
   const whatsappMessage = `Hi ${contactName}, I am interested in the room you listed on RentaKasi: "${listing.title}" in ${listing.location} for R${listing.price}/month. Is it still available?`
   const whatsappUrl = buildWhatsAppUrl(listing.landlordPhone, whatsappMessage) ?? '#'
   const formattedDate = new Date(listing.createdAt).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })
+  const landlordVerification = landlordVerificationStatuses[listing.landlordTrustStatus]
 
   return (
     <div className="bg-background min-h-screen pb-4 md:pb-20">
@@ -176,6 +178,13 @@ export default function ListingDetail() {
                     {phone.isValid ? phone.display : 'Phone available after landlord updates profile'}
                   </p>
                 </div>
+              </div>
+              <div className="mt-4 rounded-xl border bg-background/70 p-3">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <LandlordVerificationBadge status={listing.landlordTrustStatus} publicLabel />
+                  <span className="text-xs font-medium text-muted-foreground">Landlord trust status</span>
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground">{landlordVerification.detail}</p>
               </div>
             </div>
 

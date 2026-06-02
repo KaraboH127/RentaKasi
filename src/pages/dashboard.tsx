@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { LandlordVerificationCard } from '@/components/LandlordVerification'
 import { DashboardStatSkeleton, FullPageLoader, MessageSkeleton, TableRowSkeleton } from '@/components/skeletons'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
@@ -79,6 +80,17 @@ function LandlordDashboard({ userId }: { userId: string }) {
       {(user?.hiddenAt || user?.landlordTrustStatus === 'suspended' || user?.landlordTrustStatus === 'banned') && (
         <div className="mb-6 rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive">
           Your public listings are paused because your landlord account has multiple reports and needs moderation review.
+        </div>
+      )}
+
+      {user && (
+        <div className="mb-6 sm:mb-10">
+          <LandlordVerificationCard
+            status={user.landlordTrustStatus}
+            trustScore={user.landlordTrustScore}
+            riskScore={user.landlordRiskScore}
+            reportCount={user.landlordReportCount}
+          />
         </div>
       )}
 

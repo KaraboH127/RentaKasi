@@ -11,6 +11,10 @@ export interface AppUser {
   avatarUrl: string | null
   role: UserRole
   landlordTrustStatus: LandlordTrustStatus
+  landlordTrustScore: number
+  landlordRiskScore: number
+  landlordReportCount: number
+  phoneVerifiedAt: string | null
   hiddenAt: string | null
 }
 
@@ -30,7 +34,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 async function buildAppUser(authUser: SupabaseUser): Promise<AppUser> {
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, phone, avatar_url, landlord_verification_status, trust_status, hidden_at, trust_score, risk_score, report_count')
+    .select('full_name, phone, avatar_url, landlord_verification_status, trust_status, hidden_at, trust_score, risk_score, report_count, phone_verified_at')
     .eq('id', authUser.id)
     .maybeSingle()
 
@@ -49,6 +53,10 @@ async function buildAppUser(authUser: SupabaseUser): Promise<AppUser> {
     avatarUrl: profile?.avatar_url || null,
     role: (authUser.user_metadata?.role as UserRole) || 'tenant',
     landlordTrustStatus,
+    landlordTrustScore: profile?.trust_score ?? 40,
+    landlordRiskScore: profile?.risk_score ?? 0,
+    landlordReportCount: profile?.report_count ?? 0,
+    phoneVerifiedAt: profile?.phone_verified_at ?? null,
     hiddenAt: profile?.hidden_at ?? null,
   }
 }

@@ -18,6 +18,7 @@ import Register from '@/pages/register'
 import About from '@/pages/about'
 import Terms from '@/pages/terms'
 import Privacy from '@/pages/privacy'
+import Verification from '@/pages/verification'
 import NotFound from '@/pages/not-found'
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/verification" element={<Verification />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
