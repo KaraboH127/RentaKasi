@@ -41,6 +41,14 @@ export const landlordVerificationStatuses: Record<LandlordTrustStatus, StatusCon
     icon: BadgeCheck,
     tone: 'trusted',
   },
+  verified: {
+    label: 'Verified',
+    publicLabel: 'Verified Landlord',
+    description: 'Landlord has met trust requirements.',
+    detail: 'The landlord has passed platform trust checks and has a stronger trust record on RentaKasi.',
+    icon: BadgeCheck,
+    tone: 'trusted',
+  },
   suspended: {
     label: 'Suspended',
     publicLabel: 'Suspended',
@@ -127,28 +135,29 @@ export function VerificationProgress({ status }: { status: LandlordTrustStatus }
           <div
             key={step.key}
             className={cn(
-              'rounded-xl border bg-background p-3',
-              isCurrent && 'border-primary/35 bg-primary/5',
+              'rounded-xl border bg-background p-4 transition-all',
+              isCurrent && 'border-primary/35 bg-primary/5 shadow-sm',
               isComplete && 'border-secondary/25 bg-secondary/5',
               isBlocked && 'border-destructive/25 bg-destructive/5',
+              !isCurrent && !isComplete && !isBlocked && 'border-muted/40'
             )}
           >
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold uppercase text-muted-foreground">Step {index + 1}</span>
+              <span className="text-[10px] font-semibold uppercase text-muted-foreground">Step {index + 1}</span>
               <span
                 className={cn(
-                  'flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-bold',
+                  'flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-bold shrink-0',
                   isComplete && 'border-secondary bg-secondary text-secondary-foreground',
-                  isCurrent && 'border-primary bg-primary text-primary-foreground',
+                  isCurrent && 'border-primary bg-primary text-primary-foreground ring-2 ring-primary/30',
                   isBlocked && 'border-destructive bg-destructive text-destructive-foreground',
-                  state === 'upcoming' && 'border-border bg-muted text-muted-foreground',
+                  state === 'upcoming' && 'border-border bg-muted text-muted-foreground'
                 )}
               >
                 {isComplete ? <Check className="h-3.5 w-3.5" /> : index + 1}
               </span>
             </div>
-            <p className="font-display text-sm font-semibold">{step.title}</p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.caption}</p>
+            <p className="font-display text-sm font-semibold leading-snug">{step.title}</p>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{step.caption}</p>
           </div>
         )
       })}
@@ -191,46 +200,64 @@ export function LandlordVerificationCard({
 
   return (
     <section className="rk-surface rounded-2xl p-5 sm:p-6">
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Landlord Verification</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-display text-xl font-bold">Current Status</h2>
+      {/* Header Section */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded">Verification Status</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            <h2 className="font-display text-2xl font-bold">Current Status</h2>
             <LandlordVerificationBadge status={status} />
           </div>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{content.detail}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{content.detail}</p>
         </div>
-        <Link to="/verification">
-          <Button variant="outline" className="w-full gap-2 sm:w-auto">
+        <Link to="/verification" className="shrink-0">
+          <Button variant="outline" className="w-full gap-2 sm:w-auto touch-manipulation" size="lg">
             <ShieldCheck className="h-4 w-4" />
-            View details
+            View Details
           </Button>
         </Link>
       </div>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl bg-muted/45 p-3">
-          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Trust score</p>
-          <p className="mt-1 font-display text-2xl font-bold">{trustScore ?? 40}</p>
-        </div>
-        <div className="rounded-xl bg-muted/45 p-3">
-          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Risk score</p>
-          <p className="mt-1 font-display text-2xl font-bold">{riskScore ?? 0}</p>
-        </div>
-        <div className="rounded-xl bg-muted/45 p-3">
-          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Open signals</p>
-          <p className="mt-1 font-display text-2xl font-bold">{reportCount ?? 0}</p>
+      <div className="border-t mb-6" />
+
+      {/* Metrics Section */}
+      <div className="mb-6">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Trust Metrics</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4 sm:p-5">
+            <p className="text-[11px] font-semibold uppercase text-primary mb-2">Trust Score</p>
+            <p className="font-display text-3xl font-bold text-foreground">{trustScore ?? 40}</p>
+            <p className="text-xs text-muted-foreground mt-1">0-100 scale</p>
+          </div>
+          <div className="rounded-xl bg-gradient-to-br from-destructive/10 to-destructive/5 border border-destructive/20 p-4 sm:p-5">
+            <p className="text-[11px] font-semibold uppercase text-destructive mb-2">Risk Score</p>
+            <p className="font-display text-3xl font-bold text-foreground">{riskScore ?? 0}</p>
+            <p className="text-xs text-muted-foreground mt-1">0-100 scale</p>
+          </div>
+          <div className="rounded-xl bg-gradient-to-br from-muted/50 to-muted/25 border border-border p-4 sm:p-5">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground mb-2">Open Signals</p>
+            <p className="font-display text-3xl font-bold text-foreground">{reportCount ?? 0}</p>
+            <p className="text-xs text-muted-foreground mt-1">Active reports</p>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+      <div className="border-t mb-6" />
+
+      {/* Progress and Benefits Grid */}
+      <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
         <div>
-          <h3 className="mb-3 font-display text-base font-bold">Verification Progress</h3>
+          <h3 className="mb-4 font-display text-base font-bold">Verification Progress</h3>
+          <p className="mb-4 text-sm text-muted-foreground">Your path to building trust on RentaKasi</p>
           <VerificationProgress status={status} />
         </div>
         <div>
-          <h3 className="mb-3 font-display text-base font-bold">Why it matters</h3>
-          <VerificationBenefits />
+          <h3 className="mb-4 font-display text-base font-bold">Benefits of Verification</h3>
+          <div className="space-y-2">
+            <VerificationBenefits />
+          </div>
         </div>
       </div>
     </section>

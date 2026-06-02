@@ -8,6 +8,7 @@ import { DetailMap } from '@/components/DetailMap'
 import { ReportDialog } from '@/components/ReportDialog'
 import { TrustBadges } from '@/components/TrustBadges'
 import { LandlordVerificationBadge, landlordVerificationStatuses } from '@/components/LandlordVerification'
+import { LandlordProfileCard } from '@/components/LandlordProfileCard'
 import { getListingById, type Listing } from '@/lib/listings'
 import { buildWhatsAppUrl, normalizeSouthAfricanPhone } from '@/lib/phone'
 import { getRoomTypeLabel } from '@/lib/rental-options'
@@ -165,27 +166,9 @@ export default function ListingDetail() {
               )}
             </div>
 
-            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 sm:p-5 mb-4 sm:mb-5">
-              <h3 className="font-display font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-2 sm:mb-3">Listed By</h3>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-base shrink-0">
-                  {contactName.charAt(0)}
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground text-sm sm:text-base" data-testid="text-landlord-name">{contactName}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
-                    <Phone className="w-3 h-3" />
-                    {phone.isValid ? phone.display : 'Phone available after landlord updates profile'}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 rounded-xl border bg-background/70 p-3">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <LandlordVerificationBadge status={listing.landlordTrustStatus} publicLabel />
-                  <span className="text-xs font-medium text-muted-foreground">Landlord trust status</span>
-                </div>
-                <p className="text-xs leading-relaxed text-muted-foreground">{landlordVerification.detail}</p>
-              </div>
+            <div className="mb-4 sm:mb-6">
+              <h3 className="font-display font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-3">Listed By</h3>
+              <LandlordProfileCard listing={listing} />
             </div>
 
             <div className="rounded-2xl border border-secondary/20 bg-secondary/5 p-4 sm:p-5 mb-5 sm:mb-6">
